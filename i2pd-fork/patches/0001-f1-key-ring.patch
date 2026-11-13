@@ -1,0 +1,73 @@
+diff --git a/libi2pd/Destination.cpp b/libi2pd/Destination.cpp
+index f88688f..a3b7320 100644
+--- a/libi2pd/Destination.cpp
++++ b/libi2pd/Destination.cpp
+@@ -499,7 +499,7 @@ namespace client
+ 					{
+ 						auto ls2 = std::make_shared<i2p::data::LeaseSet2> (buf + offset, len - offset,
+ 							request->requestedBlindedKey, shared_from_this (),
+-						    m_LeaseSetPrivKey ? ((const uint8_t *)*m_LeaseSetPrivKey) : nullptr, GetPreferredCryptoType ());
++						    LookupKeyRing (key), GetPreferredCryptoType ());
+ 						if (ls2->IsValid () && !ls2->IsExpired ())
+ 						{
+ 							leaseSet = ls2;
+@@ -1604,6 +1604,34 @@ namespace client
+ 		return nullptr;
+ 	}
+ 
++const uint8_t * LeaseSetDestination::LookupKeyRing (const i2p::data::IdentHash& remoteDest)
++{
++std::lock_guard<std::mutex> lock (m_KeyRingMutex);
++auto it = m_KeyRing.find (remoteDest);
++if (it != m_KeyRing.end ())
++return (const uint8_t *)*(it->second);
++return m_LeaseSetPrivKey ? ((const uint8_t *)*m_LeaseSetPrivKey) : nullptr; // fallback: legacy session key
++}
++
++void LeaseSetDestination::SetKeyRingKey (const i2p::data::IdentHash& remoteDest, const std::string& keyBase64)
++{
++auto key = std::make_unique<i2p::data::Tag<32> >();
++if (key->FromBase64 (keyBase64) != 32)
++{
++LogPrint (eLogError, "Destination: Invalid key ring key for ", remoteDest.ToBase64 ());
++return;
++}
++std::lock_guard<std::mutex> lock (m_KeyRingMutex);
++m_KeyRing[remoteDest] = std::move (key);
++LogPrint (eLogInfo, "Destination: Key ring entry set for ", remoteDest.ToBase64 ());
++}
++
++void LeaseSetDestination::RemoveKeyRingKey (const i2p::data::IdentHash& remoteDest)
++{
++std::lock_guard<std::mutex> lock (m_KeyRingMutex);
++m_KeyRing.erase (remoteDest);
++LogPrint (eLogInfo, "Destination: Key ring entry removed for ", remoteDest.ToBase64 ());
++}
+ 	void ClientDestination::ReadAuthKey (const std::string& group, const i2p::util::Mapping * params)
+ 	{
+ 		for (const auto& it: params->GetOptions ())
+diff --git a/libi2pd/Destination.h b/libi2pd/Destination.h
+index 82cda56..fefb8e9 100644
+--- a/libi2pd/Destination.h
++++ b/libi2pd/Destination.h
+@@ -229,6 +229,10 @@ namespace client
+ 			std::string m_Nickname;
+ 			int m_LeaseSetType, m_AuthType;
+ 			std::unique_ptr<i2p::data::Tag<32> > m_LeaseSetPrivKey; // non-null if presented
++// INIM fork F-1: per-remote-destination client-auth private key ring
++std::mutex m_KeyRingMutex;
++std::map<i2p::data::IdentHash, std::unique_ptr<i2p::data::Tag<32> > > m_KeyRing;
++			const uint8_t * LookupKeyRing (const i2p::data::IdentHash& remoteDest);
+ 
+ 		public:
+ 
+@@ -237,6 +241,9 @@ namespace client
+ 			const decltype(m_RemoteLeaseSets)& GetLeaseSets () const { return m_RemoteLeaseSets; };
+ 			bool IsEncryptedLeaseSet () const { return m_LeaseSetType == i2p::data::NETDB_STORE_TYPE_ENCRYPTED_LEASESET2; };
+ 			bool IsPerClientAuth () const { return m_AuthType > 0; };
++// INIM fork F-1
++void SetKeyRingKey (const i2p::data::IdentHash& remoteDest, const std::string& keyBase64);
++void RemoveKeyRingKey (const i2p::data::IdentHash& remoteDest);
+ 	};
+ 
+ 	class ClientDestination: public LeaseSetDestination
