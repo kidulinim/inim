@@ -31,7 +31,7 @@ AGPL-3.0 as well; MDK/OpenMLS are MIT **[V]**). MDK code is used as a dependency
 
 | Item | Pin | Provenance | Status |
 |---|---|---|---|
-| i2pd base for the INIM fork | 2.61.0 (newest upstream tag at 2026-11-13; option names [V]-verified in 2.58 sources) | github.com/PurpleI2P/i2pd (BSD-3-Clause) | CANDIDATE — ADR-001 chooses the base tag: newest tag vs. the Debian 2.58 reference in which the I2CP option constants were verified |
+| i2pd base for the INIM fork | **2.61.0** (owner decision 2026-11-14) | github.com/PurpleI2P/i2pd (BSD-3-Clause) | PINNED — I2CP option names and Datagram2/3 presence verified against the 2.61.0 sources (docs/verification/i2pd-2.61.0-phase0.md); runtime behavior confirmed only by Phase 1 experiments |
 | i2pd fork requirements | F-1..F-10 (specification Appendix A) | in this repository (`i2pd-fork/`) | — |
 
 ## Storage / serialization
