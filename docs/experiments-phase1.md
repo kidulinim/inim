@@ -4,7 +4,7 @@ All experiments run against the pinned i2pd fork (two independent routers) and p
 
 | ID | Question | Pass criterion | Status |
 |---|---|---|---|
-| E-1 | Secret LeaseSet + DH auth between two independent routers works end-to-end | Authorized connects; unauthorized fails | planned |
+| E-1 | Secret LeaseSet with DH auth between two independent routers works end-to-end | Authorized connects; unauthorized fails | planned — **not done**. Implementation-side prerequisites are in place (patch `0002` F-11 lookup + F-1 key ring), but the two-router run has not happened; test matrix for it is in `docs/plans/e1-test-matrix.md` |
 | E-2 | Key ring (F-1) with >= 20 remote Destinations on one session | Correct key per peer; no cross-use | planned |
 | E-3 | Datagram2/3 vs streaming: latency (cold/warm), delivery rate, throughput, MTU | Decides ADR-002 | planned |
 | E-4 | Can a server reply to a client whose LeaseSet it cannot decrypt? | Documented; enrollment works either way | planned |

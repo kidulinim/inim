@@ -1,0 +1,80 @@
+From 6944d3c0ad1a997cd49f9addb279d8bfc8a34421 Mon Sep 17 00:00:00 2001
+From: INIM Fork <inim@local>
+Date: Sun, 15 Nov 2026 19:15:31 +0000
+Subject: [PATCH 3/3] F-1 v3: no silent shared-key fallback per ADR-019 (fail
+ closed in per-contact mode); scrub base64 also on decode failure
+
+---
+ libi2pd/Destination.cpp | 29 ++++++++++++++++++++++++-----
+ libi2pd/Destination.h   |  1 +
+ 2 files changed, 25 insertions(+), 5 deletions(-)
+
+diff --git a/libi2pd/Destination.cpp b/libi2pd/Destination.cpp
+index b64dcab..53299b7 100644
+--- a/libi2pd/Destination.cpp
++++ b/libi2pd/Destination.cpp
+@@ -499,8 +499,20 @@ namespace client
+ 					{
+ 						i2p::data::Tag<32> lsKey;
+ 						bool haveKeyRingKey = GetKeyRingKey (request->requestedBlindedKey->GetIdentHash (), lsKey);
+-						const uint8_t * privKey = haveKeyRingKey ? (const uint8_t *)lsKey :
+-							(m_LeaseSetPrivKey ? ((const uint8_t *)*m_LeaseSetPrivKey) : nullptr);
++						const uint8_t * privKey = nullptr;
++						if (haveKeyRingKey)
++							privKey = lsKey;
++						else if (IsKeyRingEmpty () && m_LeaseSetPrivKey)
++						{
++							// Legacy single-session mode only: per-contact keys must not silently be replaced
++							// by the shared key (see ADR-019). INIM forks always run in key-ring mode.
++							LogPrint (eLogWarning, "Destination: F-1: no key ring entry, using legacy session key for ",
++								request->requestedBlindedKey->GetIdentHash ().ToBase64 ());
++							privKey = (const uint8_t *)*m_LeaseSetPrivKey;
++						}
++						else
++							LogPrint (eLogWarning, "Destination: F-1: no key ring entry for ",
++								request->requestedBlindedKey->GetIdentHash ().ToBase64 (), ", continuing fail-closed without a key");
+ 						auto ls2 = std::make_shared<i2p::data::LeaseSet2> (buf + offset, len - offset,
+ 							request->requestedBlindedKey, shared_from_this (),
+ 							privKey, GetPreferredCryptoType ());
+@@ -1621,16 +1633,23 @@ namespace client
+ 		return false;
+ 	}
+ 
++	bool LeaseSetDestination::IsKeyRingEmpty () const // INIM fork F-1
++	{
++		std::lock_guard<std::mutex> lock (m_KeyRingMutex);
++		return m_KeyRing.empty ();
++	}
++
+ 	void LeaseSetDestination::SetKeyRingKey (const i2p::data::IdentHash& blindedIdent, std::string keyBase64)
+ 	{
+ 		i2p::data::Tag<32> key;
+-		if (key.FromBase64 (keyBase64) != 32)
++		bool decodeOk = (key.FromBase64 (keyBase64) == 32);
++		std::fill (keyBase64.begin (), keyBase64.end (), '\0'); // scrub our copy even when decoding fails
++		if (!decodeOk)
+ 		{
+ 			LogPrint (eLogError, "Destination: Invalid key ring key for ", blindedIdent.ToBase64 ());
++			key.Fill (0);
+ 			return;
+ 		}
+-		// INIM fork F-1: scrub our base64 copy (keyBase64 is taken by value for this purpose)
+-		std::fill (keyBase64.begin (), keyBase64.end (), '\0');
+ 		std::lock_guard<std::mutex> lock (m_KeyRingMutex);
+ 		m_KeyRing[blindedIdent] = key;
+ 		key.Fill (0); // INIM fork F-1: don't leave the key copy on the stack
+diff --git a/libi2pd/Destination.h b/libi2pd/Destination.h
+index 48abcc2..c2007b5 100644
+--- a/libi2pd/Destination.h
++++ b/libi2pd/Destination.h
+@@ -239,6 +239,7 @@ namespace client
+ 			bool IsPerClientAuth () const { return m_AuthType > 0; };
+ 			void SetKeyRingKey (const i2p::data::IdentHash& blindedIdent, std::string keyBase64); // INIM fork F-1
+ 			bool GetKeyRingKey (const i2p::data::IdentHash& blindedIdent, i2p::data::Tag<32> & k) const; // INIM fork F-1/F-11
++			bool IsKeyRingEmpty () const; // INIM fork F-1: distinguishes legacy single-key mode from per-contact mode
+ 			void RemoveKeyRingKey (const i2p::data::IdentHash& blindedIdent); // INIM fork F-1
+ 	};
+ 
+-- 
+2.43.0
+
