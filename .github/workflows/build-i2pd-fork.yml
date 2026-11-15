@@ -1,0 +1,52 @@
+name: build-i2pd-fork
+
+# INIM i2pd fork CI (spec App. A / F-10): applies the patch series sequentially
+# on a clean upstream 2.61.0 with `git am` and builds it. A patch is considered
+# only as "statically verified" once this workflow is green on its commit.
+
+on:
+  push:
+    paths:
+      - 'i2pd-fork/patches/**'
+      - 'i2pd-fork/scripts/**'
+      - '.github/workflows/build-i2pd-fork.yml'
+  pull_request:
+    paths:
+      - 'i2pd-fork/patches/**'
+      - 'i2pd-fork/scripts/**'
+      - '.github/workflows/build-i2pd-fork.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04   # arm64 runner would also work; the build is arch-independent
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential libboost-dev libssl-dev zlib1g-dev
+
+      - name: Fetch clean i2pd 2.61.0
+        run: |
+          curl -sL -o i2pd.tar.gz https://github.com/PurpleI2P/i2pd/archive/refs/tags/2.61.0.tar.gz
+          tar -xzf i2pd.tar.gz
+          mv i2pd-2.61.0 i2pd-src
+          cd i2pd-src
+          git init -q
+          git config user.name 'INIM CI'
+          git config user.email 'ci@inim.local'
+          git add -A && git commit -q -m 'upstream i2pd 2.61.0 base'
+
+      - name: Apply patch series (git am, sequential)
+        run: cd i2pd-src && ../i2pd-fork/scripts/apply-patches.sh
+
+      - name: Build
+        run: |
+          cd i2pd-src
+          make -j"$(nproc)"
+          test -x ./i2pd
+          ./i2pd --version | grep -F 'i2pd version 2.61.0'
