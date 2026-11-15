@@ -1,7 +1,7 @@
 From 3d311e9ada4399a0c939cb93dac0f0455c47ca37 Mon Sep 17 00:00:00 2001
 From: INIM Fork <inim@local>
 Date: Sun, 15 Nov 2026 14:19:45 +0000
-Subject: [PATCH 2/3] F-11: I2CP HostLookup case 1 resolves blinded (b33)
+Subject: [PATCH 2/4] F-11: I2CP HostLookup case 1 resolves blinded (b33)
  addresses via RequestDestinationWithEncryptedLeaseSet + key ring
 
 ---

@@ -1,8 +1,9 @@
 name: build-i2pd-fork
 
-# INIM i2pd fork CI (spec App. A / F-10): applies the patch series sequentially
-# on a clean upstream 2.61.0 with `git am` and builds it. A patch is considered
-# only as "statically verified" once this workflow is green on its commit.
+# INIM i2pd fork CI (spec App. A / F-10, Reviewer 1 round 3 item 8): applies the
+# patch series sequentially on a clean upstream 2.61.0 with `git am` and builds it.
+# A patch is "done" only after this workflow is green on its commit ("compiles
+# clean" is meaningless without a green CI run).
 
 on:
   push:
@@ -19,7 +20,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04   # arm64 runner would also work; the build is arch-independent
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -30,9 +31,21 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential libboost-dev libssl-dev zlib1g-dev
 
-      - name: Fetch clean i2pd 2.61.0
+      - name: Record toolchain version
+        run: |
+          {
+            echo "=== compiler ==="
+            g++ --version
+            echo "=== make ==="
+            make --version | head -1
+          } | tee build.log
+
+      - name: Fetch clean i2pd 2.61.0 (pinned SHA-256)
+        env:
+          I2PD_SHA256: 409cd3c0257491286611ab6aaf690940c7248fb898377c13fadb65a836e2a0ab  # sha256 of i2pd-2.61.0.tar.gz (verified twice 2026-11-16)
         run: |
           curl -sL -o i2pd.tar.gz https://github.com/PurpleI2P/i2pd/archive/refs/tags/2.61.0.tar.gz
+          echo "$I2PD_SHA256  i2pd.tar.gz" | sha256sum -c -
           tar -xzf i2pd.tar.gz
           mv i2pd-2.61.0 i2pd-src
           cd i2pd-src
@@ -41,12 +54,23 @@ jobs:
           git config user.email 'ci@inim.local'
           git add -A && git commit -q -m 'upstream i2pd 2.61.0 base'
 
-      - name: Apply patch series (git am, sequential)
-        run: cd i2pd-src && ../i2pd-fork/scripts/apply-patches.sh
+      - name: Apply patch series (git am, sequential) and record ids
+        run: |
+          cd i2pd-src
+          ../i2pd-fork/scripts/apply-patches.sh | tee -a ../build.log
+          echo "=== applied patch ids ===" | tee -a ../build.log
+          git log --oneline | tee -a ../build.log
 
       - name: Build
         run: |
           cd i2pd-src
-          make -j"$(nproc)"
+          make -j"$(nproc)" 2>&1 | tee -a ../build.log
           test -x ./i2pd
           ./i2pd --version | grep -F 'i2pd version 2.61.0'
+
+      - name: Upload build log (compiler, stderr, patch ids)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log

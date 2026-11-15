@@ -1,6 +1,7 @@
-# ADR-019: Key-ring fallback policy for blinded LeaseSet decryption
+# ADR-019: Key-ring policy for blinded LeaseSet decryption (v2, per spec v0.10)
 
-Status: accepted (2026-11-15, per Reviewer 2)
+Status: accepted — **rewritten 2026-11-16 after Reviewer 1 round 3**
+(supersedes the first version, which allowed a legacy single-key mode)
 
 ## Context
 
@@ -9,46 +10,41 @@ Encrypted (blinded) LeaseSet2. Stock i2pd has one per-session key
 (`i2cp.leaseSetPrivKey`); the INIM fork adds a per-remote-destination key ring
 (F-1, keyed by the stable blinded identity `SHA256(stA || A)`).
 
-Question (Reviewer 2, F-1): what happens when a decryption reply arrives for a
-blinded destination that has **no** key-ring entry — may the code silently fall
-back to the shared session key?
+The first ADR version allowed the shared session key as a fallback when the key
+ring was **empty**. Reviewer 1 rejected mode inference from ring emptiness:
+revoking the **last** contact would silently re-enable a shared key that no
+contact is authorized for — exactly the fail-closed violation the policy exists
+to prevent.
 
-## Decision
+## Decision (spec v0.10, section 0.7)
 
-**No silent fallback when a key ring is in use.** The behavior is a strict
-three-case policy in `LeaseSetDestination::HandleDatabaseStoreMessage`
-(encrypted LeaseSet2 branch), implemented via `IsKeyRingEmpty ()`:
+1. **No legacy shared-key mode exists in the INIM fork.**
+   `i2cp.leaseSetPrivKey` is **rejected at parse time** (critical log line, the
+   value is never stored, never used).
+2. **A missing key-ring entry always means "decrypt without a key".** There is
+   no mode to infer: per-contact keys are the only source.
+3. **All remote LeaseSets must use per-client auth (DH)**: an Encrypted
+   LeaseSet without client auth decrypts with an empty key and is not private.
+   The core must require auth type DH before accepting any remote LeaseSet;
+   E-1 includes an "auth type / no client auth" rejection case.
 
-1. **Key-ring entry present** — decrypt with that key (per-contact credential).
-2. **Key ring is empty AND a legacy session key is configured** — decrypt with
-   the session key and log a *warning*. This is the stock-i2pd single-key mode
-   and can only occur when the INIM core has not registered any credential yet
-   (development, misconfiguration, or a profile that intentionally runs
-   single-key). The warning names the destination (blinded ident, no secrets).
-3. **Key ring is non-empty (per-contact mode) but the entry is missing** —
-   **do not** substitute the session key; try without any key and fail closed.
-   A missing entry means a contact whose credential was never authorized (or
-   was revoked); decrypting with the shared key would hide the misconfiguration
-   and grant access the operator did not intend.
+## Rationale
 
-Rationale: in per-contact mode (which the INIM core always uses) every peer has
-its own credential. Falling back to a shared key would (a) leak nothing new but
-(b) silently succeed for a peer that should have been rejected, defeating the
-allowlist and revocation model (spec 7.6, 7.9). Fail-closed keeps the invariant
-"an encrypted LeaseSet is only readable with the credential issued for that
-remote".
-
-Rationale for keeping case 2 instead of removing the session key entirely: the
-fork remains build-compatible and testable against stock I2CP behavior and
-upstream experiments (E-1..E-3) before the control channel (F-8) exists; the
-mode is distinguishable by the warning log and by `IsKeyRingEmpty ()`. The
-warning message says "legacy mode" so misconfiguration is visible.
+- Fail-closed must hold unconditionally: any peer without an explicitly
+  authorized credential simply cannot read our Secret LeaseSet.
+- A mode inferred from ring size breaks exactly at the edge of the last
+  revocation — one rule is auditable at a glance.
+- Rejecting `i2cp.leaseSetPrivKey` removes the temptation to configure it.
 
 ## Consequences
 
-- `SetKeyRingKey` / `RemoveKeyRingKey` are the only ways to enter/leave
-  per-contact mode (once F-8 exposes them at runtime).
-- The E-1 test matrix must include the "no key" case and verify it does **not**
-  produce a usable session in per-contact mode (fail closed).
-- Any future change of this policy requires a new ADR; the code comment at the
-  fallback site references this document.
+- `SetKeyRingKey` / `RemoveKeyRingKey` are the only levers; runtime exposure
+  comes with F-8, E-1 uses a test-only preload file (not shipped).
+- `RemoveKeyRingKey` also evicts the peer's cached remote LeaseSet (ident +
+  store hash) and its routing session — the cache otherwise bypasses the ring.
+- On LeaseSet decryption failure the request completes immediately with a null
+  reply (no timeout wait); a timeout applies only when no floodfill answers
+  (F-11, spec v0.10).
+- E-1 verifies: right key / wrong key / no key / no-auth LeaseSet rejected /
+  key removed → cache evicted / expired LeaseSet → re-resolve via HostLookup.
+- Any change to this policy requires a new ADR.

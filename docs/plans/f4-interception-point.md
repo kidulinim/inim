@@ -9,8 +9,9 @@ New Session (NS) handling: `ECIESX25519AEADRatchetSession::HandleNextMessage`
 — the section that decrypts the NS "flags/static" block (line ~335-375):
 
 1. The 48-byte flags/static section is AEAD-decrypted into `fs[32]` — this is
-   the **sender's ephemeral-or-static X25519 public key** ("apk", Alice's static
-   when present).
+   **only the sender's static X25519 public key** ("apk"); an anonymous New
+   Session carries an all-zero key here (Reviewer 1 round 3, item 7: there is no
+   "ephemeral-or-static" — `fs` is always the static key slot).
 2. `isStatic = !Tag<32>(fs).IsZero()` distinguishes anonymous NS (zero key)
    from keyed NS.
 3. If static: `SetRemoteStaticKey (cryptoType, fs)` **immediately before** the
@@ -19,6 +20,14 @@ New Session (NS) handling: `ECIESX25519AEADRatchetSession::HandleNextMessage`
 
 **F-4 gate placement:** exactly between steps 2 and 3, right after the sender's
 static key is known and **before** `SetRemoteStaticKey` + payload processing:
+
+IMPORTANT (Reviewer 1 round 3, item 7): a static-key allowlist match is a
+**pre-filter, not authentication**. The sender proves it holds the static key
+only when the payload AEAD succeeds — "accepted" is valid only after successful
+payload decryption. "Dropped" gives the sender **no response and no oracle**.
+Drop counters are rate-limited, with no per-packet log line. A contact's card
+holds a **set** of static keys; revocation removes the whole set; key rotation
+by a peer is a new card version.
 
 ```cpp
 bool isStatic = !i2p::data::Tag<32> (fs).IsZero ();
