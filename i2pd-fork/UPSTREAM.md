@@ -14,8 +14,9 @@ Applied in numeric order on the pinned base (`git format-patch` incremental patc
 applied with `git am`):
 
 1. `0001-F-1-key-ring-by-blinded-ident-….patch` — per-remote client-auth key ring keyed by stable blinded identity (F-1 v2).
+2. `0002-F-11-I2CP-HostLookup-….patch` — blinded (b33) destination resolution through I2CP HostLookup backed by the key ring (F-11).
 
-Planned next: F-11 (I2CP blinded destination lookup), F-4 (allowlist in New Session, ECIES static keys), then F-5–F-8 (this list is maintained from [README.md](README.md)).
+Planned next: F-4 (allowlist in New Session, ECIES static keys), then F-5–F-8 (this list is maintained from [README.md](README.md)).
 
 ## Rebase rules (F-10)
 

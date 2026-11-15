@@ -1,0 +1,89 @@
+From 3d311e9ada4399a0c939cb93dac0f0455c47ca37 Mon Sep 17 00:00:00 2001
+From: INIM Fork <inim@local>
+Date: Sun, 15 Nov 2026 14:19:45 +0000
+Subject: [PATCH 2/2] F-11: I2CP HostLookup case 1 resolves blinded (b33)
+ addresses via RequestDestinationWithEncryptedLeaseSet + key ring
+
+---
+ libi2pd/Destination.h   |  4 +---
+ libi2pd_client/I2CP.cpp | 36 ++++++++++++++++++++++++++++++++----
+ 2 files changed, 33 insertions(+), 7 deletions(-)
+
+diff --git a/libi2pd/Destination.h b/libi2pd/Destination.h
+index 721c38e..48abcc2 100644
+--- a/libi2pd/Destination.h
++++ b/libi2pd/Destination.h
+@@ -231,16 +231,14 @@ namespace client
+ 			std::unique_ptr<i2p::data::Tag<32> > m_LeaseSetPrivKey; // non-null if presented
+ 			mutable std::mutex m_KeyRingMutex;
+ 			std::map<i2p::data::IdentHash, i2p::data::Tag<32> > m_KeyRing; // INIM fork F-1: key ring by blinded ident
+-			bool GetKeyRingKey (const i2p::data::IdentHash& blindedIdent, i2p::data::Tag<32> & k) const; // INIM fork F-1
+-
+ 		public:
+-
+ 			// for HTTP only
+ 			int GetNumRemoteLeaseSets () const { return m_RemoteLeaseSets.size (); };
+ 			const decltype(m_RemoteLeaseSets)& GetLeaseSets () const { return m_RemoteLeaseSets; };
+ 			bool IsEncryptedLeaseSet () const { return m_LeaseSetType == i2p::data::NETDB_STORE_TYPE_ENCRYPTED_LEASESET2; };
+ 			bool IsPerClientAuth () const { return m_AuthType > 0; };
+ 			void SetKeyRingKey (const i2p::data::IdentHash& blindedIdent, std::string keyBase64); // INIM fork F-1
++			bool GetKeyRingKey (const i2p::data::IdentHash& blindedIdent, i2p::data::Tag<32> & k) const; // INIM fork F-1/F-11
+ 			void RemoveKeyRingKey (const i2p::data::IdentHash& blindedIdent); // INIM fork F-1
+ 	};
+ 
+diff --git a/libi2pd_client/I2CP.cpp b/libi2pd_client/I2CP.cpp
+index 4bd60b1..14214be 100644
+--- a/libi2pd_client/I2CP.cpp
++++ b/libi2pd_client/I2CP.cpp
+@@ -973,16 +973,44 @@ namespace client
+ 				{
+ 					auto name = i2p::util::Mapping::ExtractString (buf + 11, len - 11);
+ 					auto addr = i2p::client::context.GetAddressBook ().GetAddress (name);
+-					if (!addr || !addr->IsIdentHash ())
++					if (!addr)
+ 					{
+-						// TODO: handle blinded addresses
+ 						LogPrint (eLogError, "I2CP: Address ", name, " not found");
+ 						SendHostReplyMessage (requestID, nullptr);
+ 						return;
+ 					}
+-					else
++					if (addr->IsIdentHash ())
++					{
+ 						ident = addr->identHash;
+-					break;
++						break;
++					}
++					// INIM fork F-11: blinded (b33) destination — resolve with the encrypted-LeaseSet request
++					auto blinded = addr->blindedPublicKey;
++					if (!blinded || !blinded->IsValid ())
++					{
++						LogPrint (eLogError, "I2CP: Address ", name, " is not valid");
++						SendHostReplyMessage (requestID, nullptr);
++						return;
++					}
++					std::shared_ptr<LeaseSetDestination> blindDest = m_Destination;
++					if (!blindDest) blindDest = i2p::client::context.GetSharedLocalDestination ();
++					if (!blindDest)
++					{
++						SendHostReplyMessage (requestID, nullptr);
++						return;
++					}
++					// The per-remote private auth key comes from the key ring (F-1) during LeaseSet
++					// decryption (see HandleDatabaseStoreMessage). If it is absent, the lookup cannot
++					// decrypt the reply and the request ends in its timeout as a null reply.
++					// Daily rotation of the blinded store key does not affect the ring identity
++					// SHA256(stA || A), so a fresh request re-resolves under the same ring entry.
++					auto s = shared_from_this ();
++					blindDest->RequestDestinationWithEncryptedLeaseSet (blinded,
++						[s, requestID](std::shared_ptr<i2p::data::LeaseSet> leaseSet)
++						{
++							s->SendHostReplyMessage (requestID, leaseSet ? leaseSet->GetIdentity () : nullptr);
++						});
++					return;
+ 				}
+ 				default:
+ 					LogPrint (eLogError, "I2CP: Request type ", (int)buf[10], " is not supported");
+-- 
+2.43.0
+
