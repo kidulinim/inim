@@ -13,8 +13,9 @@
 Applied in numeric order on the pinned base:
 
 1. `0001-f1-key-ring.patch` — per-remote-destination client-auth key ring (F-1).
+2. `0002-f2-runtime-auth-confirmation.patch` — runtime client-auth add/remove + LeaseSet republish + router-confirmed publish events (F-2).
 
-More patches follow for F-2..F-8 (F-9 is done upstream; F-10 is process, not a patch).
+More patches follow for F-3..F-8 (F-9 is done upstream; F-10 is process, not a patch).
 
 ## Rebase rules (F-10)
 
