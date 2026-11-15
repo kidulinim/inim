@@ -10,13 +10,12 @@
 
 ## Patch series
 
-Applied in numeric order on the pinned base:
+Applied in numeric order on the pinned base (`git format-patch` incremental patches,
+applied with `git am`):
 
-1. `0001-f1-key-ring.patch` — per-remote-destination client-auth key ring (F-1).
-2. `0002-f2-runtime-auth-confirmation.patch` — runtime client-auth add/remove + LeaseSet republish + router-confirmed publish events (F-2).
-3. `0003-f3-padding.patch` — padding of encrypted LeaseSet client lists to size buckets (F-3).
+1. `0001-F-1-key-ring-by-blinded-ident-….patch` — per-remote client-auth key ring keyed by stable blinded identity (F-1 v2).
 
-More patches follow for F-4..F-8 (F-9 is done upstream; F-10 is process, not a patch).
+Planned next: F-11 (I2CP blinded destination lookup), F-4 (allowlist in New Session, ECIES static keys), then F-5–F-8 (this list is maintained from [README.md](README.md)).
 
 ## Rebase rules (F-10)
 

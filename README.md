@@ -5,7 +5,7 @@ Privacy-focused messenger for humans and agents: Android first, end-to-end encry
 through I2P over Secret (encrypted) LeaseSets with per-client authorization.
 **No relays and no servers of any kind are required.**
 
-- **Specification (single source of truth):** [docs/spec/technical-specification-v0.8.md](docs/spec/technical-specification-v0.8.md)
+- **Specification (single source of truth):** [docs/spec/technical-specification-v0.9.md](docs/spec/technical-specification-v0.9.md)
 - **License:** AGPL-3.0 (see [LICENSE](LICENSE))
 - **Status:** Phase 0 — pinning, ADRs, experiment plan. Implement phase by phase.
 

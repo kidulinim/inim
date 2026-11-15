@@ -1,0 +1,135 @@
+From 5e1a05d2d884f53eb03e6d029dc1bfdcae232daf Mon Sep 17 00:00:00 2001
+From: INIM Fork <inim@local>
+Date: Sun, 15 Nov 2026 09:00:38 +0000
+Subject: [PATCH] F-1: key ring by blinded ident (SHA256(stA || A)) with safe
+ copies and zeroize
+
+---
+ libi2pd/Blinding.cpp    | 13 +++++++++++++
+ libi2pd/Blinding.h      |  1 +
+ libi2pd/Destination.cpp | 40 +++++++++++++++++++++++++++++++++++++++-
+ libi2pd/Destination.h   |  5 +++++
+ 4 files changed, 58 insertions(+), 1 deletion(-)
+
+diff --git a/libi2pd/Blinding.cpp b/libi2pd/Blinding.cpp
+index 2006462..778a9df 100644
+--- a/libi2pd/Blinding.cpp
++++ b/libi2pd/Blinding.cpp
+@@ -334,6 +334,19 @@ namespace data
+ 			LogPrint (eLogError, "Blinding: Blinded key type ", (int)m_BlindedSigType, " is not supported");
+ 		return hash;
+ 	}
++	i2p::data::IdentHash BlindedPublicKey::GetIdentHash () const // INIM fork F-1
++	{
++		// stable blinded identity = SHA256(stA || A) — what a b33 address carries; not the daily store hash
++		i2p::data::IdentHash hash;
++		auto stA = htobe16 (m_SigType);
++		EVP_MD_CTX * ctx = EVP_MD_CTX_new ();
++		EVP_DigestInit_ex (ctx, EVP_sha256 (), NULL);
++		EVP_DigestUpdate (ctx, (const uint8_t *)&stA, 2);
++		EVP_DigestUpdate (ctx, m_PublicKey.data (), m_PublicKey.size ());
++		EVP_DigestFinal_ex (ctx, (uint8_t *)hash, nullptr);
++		EVP_MD_CTX_free (ctx);
++		return hash;
++	}
+ 
+ }
+ }
+diff --git a/libi2pd/Blinding.h b/libi2pd/Blinding.h
+index fc11f61..2a70e76 100644
+--- a/libi2pd/Blinding.h
++++ b/libi2pd/Blinding.h
+@@ -37,6 +37,7 @@ namespace data
+ 			size_t GetBlindedKey (const char * date, uint8_t * blindedKey) const; // date is 8 chars "YYYYMMDD", return public key length
+ 			size_t BlindPrivateKey (const uint8_t * priv, const char * date, uint8_t * blindedPriv, uint8_t * blindedPub) const; // date is 8 chars "YYYYMMDD", return public key length
+ 			i2p::data::IdentHash GetStoreHash (const char * date = nullptr) const; // date is 8 chars "YYYYMMDD", use current if null
++			i2p::data::IdentHash GetIdentHash () const; // INIM fork F-1: stable blinded ident SHA256(stA || A), for key ring
+ 
+ 		private:
+ 
+diff --git a/libi2pd/Destination.cpp b/libi2pd/Destination.cpp
+index f88688f..8fc1c6f 100644
+--- a/libi2pd/Destination.cpp
++++ b/libi2pd/Destination.cpp
+@@ -497,9 +497,10 @@ namespace client
+ 					m_LeaseSetRequests.erase (it2);
+ 					if (request->requestedBlindedKey)
+ 					{
++						i2p::data::Tag<32> lsk; bool haveKeyRingKey = GetKeyRingKey (request->requestedBlindedKey->GetIdentHash (), lsk);
+ 						auto ls2 = std::make_shared<i2p::data::LeaseSet2> (buf + offset, len - offset,
+ 							request->requestedBlindedKey, shared_from_this (),
+-						    m_LeaseSetPrivKey ? ((const uint8_t *)*m_LeaseSetPrivKey) : nullptr, GetPreferredCryptoType ());
++						    (haveKeyRingKey ? (const uint8_t *)lsk : (m_LeaseSetPrivKey ? ((const uint8_t *)*m_LeaseSetPrivKey) : nullptr)), GetPreferredCryptoType ());
+ 						if (ls2->IsValid () && !ls2->IsExpired ())
+ 						{
+ 							leaseSet = ls2;
+@@ -1604,6 +1605,43 @@ namespace client
+ 		return nullptr;
+ 	}
+ 
++	bool LeaseSetDestination::GetKeyRingKey (const i2p::data::IdentHash& blindedIdent, i2p::data::Tag<32> & k) const // INIM fork F-1
++	{
++		std::lock_guard<std::mutex> lock (m_KeyRingMutex);
++		auto it = m_KeyRing.find (blindedIdent);
++		if (it != m_KeyRing.end ())
++		{
++			k = it->second;
++			return true;
++		}
++		return false;
++	}
++
++	void LeaseSetDestination::SetKeyRingKey (const i2p::data::IdentHash& blindedIdent, const std::string& keyBase64)
++	{
++		i2p::data::Tag<32> key;
++		if (key.FromBase64 (keyBase64) != 32)
++		{
++			LogPrint (eLogError, "Destination: Invalid key ring key for ", blindedIdent.ToBase64 ());
++			return;
++		}
++		std::lock_guard<std::mutex> lock (m_KeyRingMutex);
++		m_KeyRing[blindedIdent] = key;
++		LogPrint (eLogInfo, "Destination: Key ring entry set for ", blindedIdent.ToBase64 ());
++	}
++
++	void LeaseSetDestination::RemoveKeyRingKey (const i2p::data::IdentHash& blindedIdent)
++	{
++		std::lock_guard<std::mutex> lock (m_KeyRingMutex);
++		auto it = m_KeyRing.find (blindedIdent);
++		if (it != m_KeyRing.end ())
++		{
++			it->second.Fill (0); // zeroize secret before erase
++			m_KeyRing.erase (it);
++			LogPrint (eLogInfo, "Destination: Key ring entry removed for ", blindedIdent.ToBase64 ());
++		}
++	}
++
+ 	void ClientDestination::ReadAuthKey (const std::string& group, const i2p::util::Mapping * params)
+ 	{
+ 		for (const auto& it: params->GetOptions ())
+diff --git a/libi2pd/Destination.h b/libi2pd/Destination.h
+index 82cda56..73b7c98 100644
+--- a/libi2pd/Destination.h
++++ b/libi2pd/Destination.h
+@@ -229,6 +229,9 @@ namespace client
+ 			std::string m_Nickname;
+ 			int m_LeaseSetType, m_AuthType;
+ 			std::unique_ptr<i2p::data::Tag<32> > m_LeaseSetPrivKey; // non-null if presented
++			mutable std::mutex m_KeyRingMutex;
++			std::map<i2p::data::IdentHash, i2p::data::Tag<32> > m_KeyRing; // INIM fork F-1: key ring by blinded ident
++			bool GetKeyRingKey (const i2p::data::IdentHash& blindedIdent, i2p::data::Tag<32> & k) const; // INIM fork F-1
+ 
+ 		public:
+ 
+@@ -237,6 +240,8 @@ namespace client
+ 			const decltype(m_RemoteLeaseSets)& GetLeaseSets () const { return m_RemoteLeaseSets; };
+ 			bool IsEncryptedLeaseSet () const { return m_LeaseSetType == i2p::data::NETDB_STORE_TYPE_ENCRYPTED_LEASESET2; };
+ 			bool IsPerClientAuth () const { return m_AuthType > 0; };
++			void SetKeyRingKey (const i2p::data::IdentHash& blindedIdent, const std::string& keyBase64); // INIM fork F-1
++			void RemoveKeyRingKey (const i2p::data::IdentHash& blindedIdent); // INIM fork F-1
+ 	};
+ 
+ 	class ClientDestination: public LeaseSetDestination
+-- 
+2.43.0
+
