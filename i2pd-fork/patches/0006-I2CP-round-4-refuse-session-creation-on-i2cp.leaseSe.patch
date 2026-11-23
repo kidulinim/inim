@@ -1,7 +1,7 @@
 From 3a7e1e6e22eb36b829aef0564d78826b5decca3c Mon Sep 17 00:00:00 2001
 From: INIM Fork <inim-dev@local>
 Date: Mon, 23 Nov 2026 13:29:03 +0000
-Subject: [PATCH 6/8] I2CP round 4: refuse session creation on
+Subject: [PATCH 6/9] I2CP round 4: refuse session creation on
  i2cp.leaseSetPrivKey (rejected at parse time per ADR-019, not just a log
  line); fix indentation in F-11 blinded branch (one level too little)
 

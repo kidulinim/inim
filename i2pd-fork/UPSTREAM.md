@@ -27,8 +27,9 @@ applied with `git am`):
 6. `0006-I2CP-round-4-….patch` — `CreateSessionMessageHandler` now **refuses** session creation (`eI2CPSessionStatusRefused`) when `i2cp.leaseSetPrivKey` is configured (ADR-019 item 1 wording said "rejected at parse time"; a log line alone was not enforcing) + F-11 blinded branch indentation fix (Reviewer 1 round 4 items 5, 7).
 7. `0007-Garlic-round-4-….patch` — `RemoveECIESx25519Session` now drops the terminated session's tag sets from `m_ECIESx25519Tags` (before: terminated session's tags remained usable until the next `m_CleanupTimer` pass) (Reviewer 1 round 4 item 6).
 8. `0008-Tests-key-ring-revocation-….patch` — unit test `tests/test-keyring-revocation`: SetKeyRingKey/GetKeyRingKey round trip (catches a vanished `SetKeyRingKey` definition at link/behavior time), tag eviction + session termination on revocation (Reviewer 1 round 4 items 1, 6). Runner: `cd tests && make test-keyring-revocation && ./test-keyring-revocation`; the CI runs it as part of the workflow.
+9. `0009-Round-5-….patch` — Reviewer 1 round 5: `RemoveECIESx25519Session` restored to upstream behavior (shared by regular callers), new `RevokeECIESx25519Session` does the session + tag-set revoke used by `RemoveKeyRingKey` and future F-4; thread-safety rule comment (revoke path runs in the destination `io_context` thread, `m_Service.post` from future F-8) in `Destination.h` and `ADR-008`; test hook `InsertRemoteLeaseSetForTest` + LeaseSet cache-eviction unit tests (ident + store hash); brace indentation fixed in the cache-write block; E-1 matrix cases 5 and 7 documented in README as left to the two-router run.
 
-Planned next: test-only key ring preload (for E-1, F-8 until then), then E-1, then F-4 (allowlist in New Session, ECIES static keys), then F-5–F-8 (this list is maintained from [README.md](README.md)).
+Planned next: test-only key ring preload (for E-1, F-8 until then), then E-1 (matrix cases 1-7, incl. 5/7 left from unit scope), then F-4 (allowlist in New Session, ECIES static keys), then F-5–F-8 (this list is maintained from [README.md](README.md)).
 
 ## Rebase rules (F-10)
 
