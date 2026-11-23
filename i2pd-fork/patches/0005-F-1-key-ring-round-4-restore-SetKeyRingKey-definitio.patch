@@ -1,0 +1,72 @@
+From a946e408b3bc11692e3abcc96e3cf0aa7cde9b8b Mon Sep 17 00:00:00 2001
+From: INIM Fork <inim-dev@local>
+Date: Mon, 23 Nov 2026 13:25:07 +0000
+Subject: [PATCH 5/8] F-1 key ring round 4: restore SetKeyRingKey definition
+ (scrub base64 copy incl. decode failure); write m_KeyRingCacheKeys under
+ m_KeyRingMutex (data race fix, locking order documented)
+
+---
+ libi2pd/Destination.cpp | 35 ++++++++++++++++++++++++++++++-----
+ 1 file changed, 30 insertions(+), 5 deletions(-)
+
+diff --git a/libi2pd/Destination.cpp b/libi2pd/Destination.cpp
+index 09a3858..b496c27 100644
+--- a/libi2pd/Destination.cpp
++++ b/libi2pd/Destination.cpp
+@@ -505,16 +505,25 @@ namespace client
+ 							privKey, GetPreferredCryptoType ());
+ 						lsKey.Fill (0); // INIM fork F-1: don't leave the key copy on the stack
+ 						if (ls2->IsValid () && !ls2->IsExpired () && ls2->HasClientAuth ())
++					{
++						leaseSet = ls2;
+ 						{
+-							leaseSet = ls2;
+ 							std::lock_guard<std::mutex> lock(m_RemoteLeaseSetsMutex);
+ 							m_RemoteLeaseSets[ls2->GetIdentHash ()] = ls2; // ident is not key
+ 							m_RemoteLeaseSets[key] = ls2; // also store as key for next lookup
+-							// INIM F-1 (spec v0.10): track which blindedIdent backs cache keys so that
+-							// RemoveKeyRingKey can evict both (real ident and daily store hash).
+-							if (request->requestedBlindedKey)
+-								m_KeyRingCacheKeys[request->requestedBlindedKey->GetIdentHash ()] = {ls2->GetIdentHash (), key};
+ 						}
++						// INIM F-1 (spec v0.10): track which blindedIdent backs cache keys so that
++						// RemoveKeyRingKey can evict both (real ident and daily store hash).
++						// Locking order (fixed, to avoid deadlock): m_RemoteLeaseSetsMutex and m_KeyRingMutex
++						// are never held at the same time; unlock one before taking the other.
++						// m_KeyRingCacheKeys belongs to m_KeyRingMutex (same map protection as
++						// m_KeyRing and m_KeyRingSessionKeys in RemoveKeyRingKey/SetKeyRingSessionKeys).
++						if (request->requestedBlindedKey)
++						{
++							std::lock_guard<std::mutex> lock (m_KeyRingMutex);
++							m_KeyRingCacheKeys[request->requestedBlindedKey->GetIdentHash ()] = {ls2->GetIdentHash (), key};
++						}
++					}
+ 						else
+ 							LogPrint (eLogError, "Destination: New remote encrypted LeaseSet2 failed",
+ 								(ls2 && ls2->IsValid () && !ls2->IsExpired () && !ls2->HasClientAuth ()) ? ": no per-client auth (spec v0.10: required)" : "");
+@@ -1625,6 +1634,22 @@ namespace client
+ 		return false;
+ 	}
+ 
++	void LeaseSetDestination::SetKeyRingKey (const i2p::data::IdentHash& blindedIdent, std::string keyBase64)
++	{
++		i2p::data::Tag<32> key;
++		bool decodeOk = (key.FromBase64 (keyBase64) == 32);
++		std::fill (keyBase64.begin (), keyBase64.end (), '\0'); // scrub our copy even when decoding fails
++		if (!decodeOk)
++		{
++			LogPrint (eLogError, "Destination: Invalid key ring key for ", blindedIdent.ToBase64 ());
++			key.Fill (0);
++			return;
++		}
++		std::lock_guard<std::mutex> lock (m_KeyRingMutex);
++		m_KeyRing[blindedIdent] = key;
++		key.Fill (0); // INIM fork F-1: don't leave the key copy on the stack
++		LogPrint (eLogInfo, "Destination: Key ring entry set for ", blindedIdent.ToBase64 ());
++	}
+ 	void LeaseSetDestination::RemoveKeyRingKey (const i2p::data::IdentHash& blindedIdent)
+ 	{
+ 		i2p::data::IdentHash realIdent, storeHash;
+-- 
+2.43.0
+

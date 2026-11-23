@@ -1,0 +1,97 @@
+From 3a7e1e6e22eb36b829aef0564d78826b5decca3c Mon Sep 17 00:00:00 2001
+From: INIM Fork <inim-dev@local>
+Date: Mon, 23 Nov 2026 13:29:03 +0000
+Subject: [PATCH 6/8] I2CP round 4: refuse session creation on
+ i2cp.leaseSetPrivKey (rejected at parse time per ADR-019, not just a log
+ line); fix indentation in F-11 blinded branch (one level too little)
+
+---
+ libi2pd_client/I2CP.cpp | 65 +++++++++++++++++++++++------------------
+ 1 file changed, 37 insertions(+), 28 deletions(-)
+
+diff --git a/libi2pd_client/I2CP.cpp b/libi2pd_client/I2CP.cpp
+index b35795b..257861e 100644
+--- a/libi2pd_client/I2CP.cpp
++++ b/libi2pd_client/I2CP.cpp
+@@ -695,6 +695,15 @@ namespace client
+ 		i2p::util::Mapping params;
+ 		params.FromBuffer (optionsSize, buf + offset, len - offset);
+ 		offset += optionsSize; // options
++		if (!params[I2CP_PARAM_LEASESET_PRIV_KEY].empty ())
++		{
++			// INIM fork F-1 (spec v0.10): no legacy shared-key mode. A session that configures
++			// i2cp.leaseSetPrivKey is refused at parse time ("rejected") — only the per-contact
++			// key ring (F-1/F-8) provides client-auth keys for remote LeaseSets (ADR-019).
++			LogPrint (eLogCritical, "I2CP: ", I2CP_PARAM_LEASESET_PRIV_KEY, " is rejected in the INIM fork, session refused");
++			SendSessionStatusMessage (eI2CPSessionStatusRefused); // refused
++			return;
++		}
+ 		if (params[I2CP_PARAM_MESSAGE_RELIABILITY] == "none") m_IsSendAccepted = false;
+ 
+ 		offset += 8; // date
+@@ -985,34 +994,34 @@ namespace client
+ 						break;
+ 					}
+ 					// INIM fork F-11: blinded (b33) destination — resolve with the encrypted-LeaseSet request
+-				auto blinded = addr->blindedPublicKey;
+-				if (!blinded || !blinded->IsValid ())
+-				{
+-					LogPrint (eLogError, "I2CP: Address ", name, " is not a valid blinded destination");
+-					SendHostReplyMessage (requestID, nullptr);
+-					return;
+-				}
+-				// Reviewer 1 round 3 item 4: use only the session's own destination —
+-				// never fall back to context.GetSharedLocalDestination() (wrong key ring would result).
+-				if (!m_Destination)
+-				{
+-					LogPrint (eLogError, "I2CP: F-11: no session destination, cannot resolve blinded address");
+-					SendHostReplyMessage (requestID, nullptr);
+-					return;
+-				}
+-				// The per-remote private auth key comes from the key ring (F-1) during LeaseSet
+-				// decryption (see HandleDatabaseStoreMessage). A missing key means the reply cannot
+-				// be decrypted and the request completes immediately with a null HostReply (Reviewer 1
+-				// round 3 item 3: no friendly fallback, no timeout wait — timeout only when no
+-				// floodfill answers). Re-resolution across the daily blinded-key rotation works
+-				// automatically because the ring identity SHA256(stA || A) is date-independent.
+-				auto s = shared_from_this ();
+-				m_Destination->RequestDestinationWithEncryptedLeaseSet (blinded,
+-					[s, requestID](std::shared_ptr<i2p::data::LeaseSet> leaseSet)
+-					{
+-						s->SendHostReplyMessage (requestID, leaseSet ? leaseSet->GetIdentity () : nullptr);
+-					});
+-				return;
++						auto blinded = addr->blindedPublicKey;
++						if (!blinded || !blinded->IsValid ())
++						{
++							LogPrint (eLogError, "I2CP: Address ", name, " is not a valid blinded destination");
++							SendHostReplyMessage (requestID, nullptr);
++							return;
++						}
++						// Reviewer 1 round 3 item 4: use only the session's own destination —
++						// never fall back to context.GetSharedLocalDestination() (wrong key ring would result).
++						if (!m_Destination)
++						{
++							LogPrint (eLogError, "I2CP: F-11: no session destination, cannot resolve blinded address");
++							SendHostReplyMessage (requestID, nullptr);
++							return;
++						}
++						// The per-remote private auth key comes from the key ring (F-1) during LeaseSet
++						// decryption (see HandleDatabaseStoreMessage). A missing key means the reply cannot
++						// be decrypted and the request completes immediately with a null HostReply (Reviewer 1
++						// round 3 item 3: no friendly fallback, no timeout wait — timeout only when no
++						// floodfill answers). Re-resolution across the daily blinded-key rotation works
++						// automatically because the ring identity SHA256(stA || A) is date-independent.
++						auto s = shared_from_this ();
++						m_Destination->RequestDestinationWithEncryptedLeaseSet (blinded,
++							[s, requestID](std::shared_ptr<i2p::data::LeaseSet> leaseSet)
++							{
++								s->SendHostReplyMessage (requestID, leaseSet ? leaseSet->GetIdentity () : nullptr);
++							});
++						return;
+ 				}
+ 				default:
+ 					LogPrint (eLogError, "I2CP: Request type ", (int)buf[10], " is not supported");
+-- 
+2.43.0
+

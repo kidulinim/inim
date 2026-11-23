@@ -1,0 +1,132 @@
+From c855d7c4695140e6abb1e90e3fd54052c63f3249 Mon Sep 17 00:00:00 2001
+From: INIM Fork <inim-dev@local>
+Date: Mon, 23 Nov 2026 14:40:05 +0000
+Subject: [PATCH 8/8] Tests: key-ring revocation unit test (SetKeyRingKey round
+ trip + tag eviction on RemoveKeyRingKey, round 4 items 1/6); fix
+ tests/Makefile for header-only Boost.System
+
+---
+ tests/.gitignore                  |  1 +
+ tests/Makefile                    |  8 +++-
+ tests/test-keyring-revocation.cpp | 65 +++++++++++++++++++++++++++++++
+ 3 files changed, 72 insertions(+), 2 deletions(-)
+ create mode 100644 tests/test-keyring-revocation.cpp
+
+diff --git a/tests/.gitignore b/tests/.gitignore
+index 90457c2..547b435 100644
+--- a/tests/.gitignore
++++ b/tests/.gitignore
+@@ -10,3 +10,4 @@
+ /test-aeadchacha20poly1305
+ /test-blinding
+ /test-elligator
++/test-keyring-revocation
+diff --git a/tests/Makefile b/tests/Makefile
+index b020427..8afa543 100644
+--- a/tests/Makefile
++++ b/tests/Makefile
+@@ -8,7 +8,7 @@ LIBI2PD = ../libi2pd.a
+ TESTS = \
+ 	test-http-merge_chunked test-http-req test-http-res test-http-url test-http-url_decode \
+ 	test-gost test-gost-sig test-base-64 test-aeadchacha20poly1305 test-blinding \
+-	test-elligator test-eddsa test-aes
++	test-elligator test-eddsa test-aes test-keyring-revocation
+ 
+ ifneq (, $(findstring mingw, $(SYS))$(findstring windows-gnu, $(SYS))$(findstring cygwin, $(SYS)))
+ 	CXXFLAGS += -DWIN32_LEAN_AND_MEAN
+@@ -17,8 +17,10 @@ ifneq (, $(findstring mingw, $(SYS))$(findstring windows-gnu, $(SYS))$(findstrin
+ 	NEEDED_LDLIBS = -lwsock32 -lws2_32 -lgdi32 -liphlpapi -lole32
+ endif
+ 
++# newer Boost.System is header-only; link the library only when it exists
++BOOST_SYSTEM := $(shell echo 'int main(){}' | $(CXX) -x c++ - -lboost_system$(BOOST_SUFFIX) -o /dev/null 2>/dev/null && echo -lboost_system$(BOOST_SUFFIX))
+ LDLIBS = \
+-	-lboost_system$(BOOST_SUFFIX) \
++	$(BOOST_SYSTEM) \
+ 	-lboost_program_options$(BOOST_SUFFIX) \
+ 	-lssl \
+ 	-lcrypto \
+@@ -58,6 +60,8 @@ test-eddsa: test-eddsa.cpp $(LIBI2PD)
+ 
+ test-aes: test-aes.cpp $(LIBI2PD)
+ 	$(CXX) $(CXXFLAGS) $(NEEDED_CXXFLAGS) $(INCFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
++test-keyring-revocation: test-keyring-revocation.cpp $(LIBI2PD)
++	$(CXX) $(CXXFLAGS) $(NEEDED_CXXFLAGS) $(INCFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+ 
+ run: $(TESTS)
+ 	@for TEST in $(TESTS); do echo Running $$TEST; ./$$TEST ; done
+diff --git a/tests/test-keyring-revocation.cpp b/tests/test-keyring-revocation.cpp
+new file mode 100644
+index 0000000..9a3d45f
+--- /dev/null
++++ b/tests/test-keyring-revocation.cpp
+@@ -0,0 +1,65 @@
++// INIM fork: key-ring revocation unit test (F-1, Reviewer 1 round 4 items 1 and 6).
++// Covers:
++//  1) SetKeyRingKey / GetKeyRingKey / RemoveKeyRingKey round trip (guards the
++//     SetKeyRingKey definition that went missing in patch 0004).
++//  2) RemoveKeyRingKey terminates the peer's ECIES session AND drops its
++//     session tags from m_ECIESx25519Tags, so a revoked peer cannot keep
++//     delivering on stale tags (spec 7.9 / F-4 semantics for F-1).
++#include <cassert>
++#include <cstring>
++#include <iostream>
++#include <memory>
++#include "Destination.h"
++#include "ECIESX25519AEADRatchetSession.h"
++#include "Identity.h"
++
++// Minimal ClientDestination for key-ring unit checks (not Start()ed: F-1's
++// SetKeyRingKey/GetKeyRingKey don't depend on tunnels or netdb).
++int main ()
++{
++	boost::asio::io_context service;
++	auto keys = i2p::data::PrivateKeys::CreateRandomKeys (i2p::data::SIGNING_KEY_TYPE_EDDSA_SHA512_ED25519,
++		i2p::data::CRYPTO_KEY_TYPE_ECIES_X25519_AEAD);
++	auto dest = std::make_shared<i2p::client::ClientDestination> (service, keys, false, nullptr);
++
++	// 1) SetKeyRingKey / GetKeyRingKey / RemoveKeyRingKey (round 4 item 1: the
++	//    definition vanished in 0004 -- a test catches it if it goes missing again).
++	uint8_t raw[32];
++	for (int i = 0; i < 32; i++) raw[i] = (uint8_t)i;
++	i2p::data::Tag<32> blinded; blinded.Randomize ();
++	std::string key64 = i2p::data::ByteStreamToBase64 (raw, 32);
++	dest->SetKeyRingKey (blinded, key64);
++	i2p::data::Tag<32> got;
++	assert (dest->GetKeyRingKey (blinded, got));
++	assert (!memcmp (got, raw, 32));
++
++	// scrub even on decode failure: a bogus key must not be registered
++	i2p::data::Tag<32> blinded2; blinded2.Randomize ();
++	dest->SetKeyRingKey (blinded2, "!!!not-base64!!!");
++	assert (!dest->GetKeyRingKey (blinded2, got));
++
++	// 2) revocation terminates sessions and drops their tags (round 4 item 6)
++	auto session = std::make_shared<i2p::garlic::ECIESX25519AEADRatchetSession> (dest.get (), false);
++	uint8_t staticKey[32];
++	for (int i = 0; i < 32; i++) staticKey[i] = (uint8_t)(0x40 + i);
++	dest->AddECIESx25519Session (staticKey, session);
++
++	auto tagset = std::make_shared<i2p::garlic::ReceiveRatchetTagSet> (session);
++	uint8_t rootKey[32], chainKey[32];
++	memset (rootKey, 1, 32); memset (chainKey, 7, 32);
++	tagset->DHInitialize (rootKey, chainKey);
++	tagset->SetTagSetID (1);
++	uint64_t tag = dest->AddECIESx25519SessionNextTag (tagset);
++	assert (tag != 0);
++	assert (dest->GetNumIncomingECIESx25519Tags () == 1);
++
++	dest->SetKeyRingSessionKeys (blinded, {i2p::data::Tag<32> (staticKey)});
++	dest->RemoveKeyRingKey (blinded);
++
++	assert (!dest->GetKeyRingKey (blinded, got));                   // ring entry gone
++	assert (dest->GetNumIncomingECIESx25519Tags () == 0);           // session tags dropped
++	assert (session->IsTerminated ());                              // session terminated
++
++	std::cout << "test-keyring-revocation: all checks passed" << std::endl;
++	return 0;
++}
+\ No newline at end of file
+-- 
+2.43.0
+

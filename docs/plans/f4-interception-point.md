@@ -32,7 +32,7 @@ by a peer is a new card version.
 ```cpp
 bool isStatic = !i2p::data::Tag<32> (fs).IsZero ();
 // [F-4] allowlist check here:
-//   - anonymous (zero) static key  -> drop (default policy from spec 6.7/v0.9)
+//   - anonymous (zero) static key  -> drop (default policy from spec 6.7/v0.10)
 //   - static key not in allowlist  -> drop + rate-limited counter
 //   - allowlisted                  -> continue
 if (isStatic) { SetRemoteStaticKey (...); ... }
@@ -54,7 +54,7 @@ parsing" from the spec §6.3 is satisfied at the router level.
 
 Consequence: the allowlist (F-4) needs its own map `static key -> contact`
 because the router state is per-session only. That map is owned by the core
-through the F-8 control channel (per v0.9) — or, before F-8 exists, by a
+through the F-8 control channel (per v0.10) — or, before F-8 exists, by a
 test-only injector for the E-1 run.
 
 ## Revocation semantics (must invalidate live state)

@@ -1,7 +1,7 @@
 From e77fe5dca25642f4d43c8c89886f2b279979d0d9 Mon Sep 17 00:00:00 2001
 From: INIM Fork <inim@local>
 Date: Sun, 15 Nov 2026 22:00:20 +0000
-Subject: [PATCH 4/4] F-1/F-11 v0.10 (Reviewer 1 round 3, items 1-5): reject
+Subject: [PATCH 4/8] F-1/F-11 v0.10 (Reviewer 1 round 3, items 1-5): reject
  i2cp.leaseSetPrivKey (no legacy mode); require per-client auth (DH) on remote
  LS2; F-11 immediate nullptr reply + session-destination only;
  RemoveKeyRingKey evicts LeaseSet cache (ident+store hash) and terminates peer

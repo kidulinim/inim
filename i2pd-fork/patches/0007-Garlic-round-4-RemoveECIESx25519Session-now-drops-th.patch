@@ -1,0 +1,58 @@
+From 3c6a7ebcdf4a884778880d3eecf22455710c31a8 Mon Sep 17 00:00:00 2001
+From: INIM Fork <inim-dev@local>
+Date: Mon, 23 Nov 2026 13:29:37 +0000
+Subject: [PATCH 7/8] Garlic round 4: RemoveECIESx25519Session now drops the
+ terminated sessions session tags from m_ECIESx25519Tags (Terminate() alone
+ only sets a flag; tag sets stayed usable until periodic expire cleanup)
+
+---
+ libi2pd/Garlic.cpp | 32 ++++++++++++++++++++++++++++----
+ 1 file changed, 28 insertions(+), 4 deletions(-)
+
+diff --git a/libi2pd/Garlic.cpp b/libi2pd/Garlic.cpp
+index 295bf69..ab3992b 100644
+--- a/libi2pd/Garlic.cpp
++++ b/libi2pd/Garlic.cpp
+@@ -1095,11 +1095,35 @@ namespace garlic
+ 
+ 	void GarlicDestination::RemoveECIESx25519Session (const uint8_t * staticKey)
+ 	{
+-		auto it = m_ECIESx25519Sessions.find (staticKey);
+-		if (it != m_ECIESx25519Sessions.end ())
++		ECIESX25519AEADRatchetSessionPtr removed;
+ 		{
+-			it->second->Terminate ();
+-			m_ECIESx25519Sessions.erase (it);
++			auto it = m_ECIESx25519Sessions.find (staticKey);
++			if (it != m_ECIESx25519Sessions.end ())
++			{
++				removed = it->second;
++				it->second->Terminate ();
++				m_ECIESx25519Sessions.erase (it);
++			}
++		}
++		if (!removed) return;
++		// INIM F-1 (revocation, spec §7.9/F-4): Terminate () only sets a flag — the session's
++		// tag sets stay usable in m_ECIESx25519Tags until Expire () runs. Drop the tags of the
++		// terminated session here, and use session identity, not shared-pointer equality
++		// (ModifySessionKeys re-parents tagset->m_Session to the surviving session).
++		for (auto it = m_ECIESx25519Tags.begin (); it != m_ECIESx25519Tags.end ();)
++		{
++			auto ts = it->second.tagset ? it->second.tagset->GetSession () : nullptr;
++			if (ts && ts.get () == removed.get ())
++			{
++				it->second.tagset->DeleteSymmKey (it->second.index);
++				it = m_ECIESx25519Tags.erase (it);
++			}
++			else if (it->second.tagset && it->second.tagset->IsSessionTerminated ())
++			{
++				it = m_ECIESx25519Tags.erase (it);
++			}
++			else
++				++it;
+ 		}
+ 	}
+ 
+-- 
+2.43.0
+

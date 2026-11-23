@@ -19,8 +19,9 @@ to prevent.
 ## Decision (spec v0.10, section 0.7)
 
 1. **No legacy shared-key mode exists in the INIM fork.**
-   `i2cp.leaseSetPrivKey` is **rejected at parse time** (critical log line, the
-   value is never stored, never used).
+   `i2cp.leaseSetPrivKey` is **rejected at parse time**: a CREATE SESSION that
+   carries the option is **refused** (`eI2CPSessionStatusRefused`, session not
+   created), with a critical log line; the value is never stored, never used.
 2. **A missing key-ring entry always means "decrypt without a key".** There is
    no mode to infer: per-contact keys are the only source.
 3. **All remote LeaseSets must use per-client auth (DH)**: an Encrypted

@@ -7,7 +7,7 @@ Status: planned (to run together with E-1 / with the F-4 patch). Companion to
 |---|---|---|---|
 | 1 | Allowed key | Peer's static key registered in the allowlist before NS | New Session accepted; message delivered to the app |
 | 2 | Unknown key | Fresh peer, key never registered | NS dropped right after static key decode, before payload; rate-limited drop counter, no app notification body |
-| 3 | Anonymous (zero static key) | NS with `isStatic == false` (zero `fs`) | Dropped by default (v0.9 rule); only counter, no parser path entered |
+| 3 | Anonymous (zero static key) | NS with `isStatic == false` (zero `fs`) | Dropped by default (v0.10 rule); only counter, no parser path entered |
 | 4 | Revoked, new session | Key was allowed, then removed (revoke) | New NS rejected like case 2 |
 | 5 | **Revoked, active session** | Session established, then key revoked (case 4 of E-1 matrix) | Existing session terminated; its tag sets dropped; no further deliveries from that peer even over surviving tags; cached LeaseSets untouched |
 

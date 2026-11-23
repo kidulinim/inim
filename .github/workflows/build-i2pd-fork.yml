@@ -40,19 +40,21 @@ jobs:
             make --version | head -1
           } | tee build.log
 
-      - name: Fetch clean i2pd 2.61.0 (pinned SHA-256)
+      - name: Fetch clean i2pd 2.61.0 (pinned commit)
         env:
-          I2PD_SHA256: 409cd3c0257491286611ab6aaf690940c7248fb898377c13fadb65a836e2a0ab  # sha256 of i2pd-2.61.0.tar.gz (verified twice 2026-11-16)
+          # Pinned commit of the upstream 2.61.0 release (the annotated tag 2.61.0
+          # = tag object 4fef5596f366be4b174a4d090d118e7679707a38 points at this
+          # commit; verified against the GitHub API on 2026-11-23). Anchoring by
+          # commit is more reliable than an archive SHA-256: GitHub tarballs are
+          # not guaranteed stable (Reviewer 1 round 4 item 3).
+          I2PD_COMMIT: 635b013a612ff47278ef02acf8580a28e10e26c5
         run: |
-          curl -sL -o i2pd.tar.gz https://github.com/PurpleI2P/i2pd/archive/refs/tags/2.61.0.tar.gz
-          echo "$I2PD_SHA256  i2pd.tar.gz" | sha256sum -c -
-          tar -xzf i2pd.tar.gz
-          mv i2pd-2.61.0 i2pd-src
+          git clone -q https://github.com/PurpleI2P/i2pd.git i2pd-src
           cd i2pd-src
-          git init -q
-          git config user.name 'INIM CI'
-          git config user.email 'ci@inim.local'
-          git add -A && git commit -q -m 'upstream i2pd 2.61.0 base'
+          git checkout -q "$I2PD_COMMIT"
+          test "$(git rev-parse HEAD)" = "$I2PD_COMMIT"
+          echo "=== upstream base ===" | tee -a ../build.log
+          git log --oneline -1 | tee -a ../build.log
 
       - name: Apply patch series (git am, sequential) and record ids
         run: |
@@ -67,6 +69,11 @@ jobs:
           make -j"$(nproc)" 2>&1 | tee -a ../build.log
           test -x ./i2pd
           ./i2pd --version | grep -F 'i2pd version 2.61.0'
+      - name: Run fork unit tests (key-ring revoke — catches vanished definitions)
+        run: |
+          cd i2pd-src/tests
+          make test-keyring-revocation 2>&1 | tee -a ../../build.log
+          ./test-keyring-revocation | tee -a ../../build.log
 
       - name: Upload build log (compiler, stderr, patch ids)
         if: always()
