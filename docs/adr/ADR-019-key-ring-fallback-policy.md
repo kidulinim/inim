@@ -48,4 +48,11 @@ to prevent.
   (F-11, spec v0.10).
 - E-1 verifies: right key / wrong key / no key / no-auth LeaseSet rejected /
   key removed → cache evicted / expired LeaseSet → re-resolve via HostLookup.
+- As of Reviewer 1 round 5 the worker path (key ring set/get/remove, session +
+  tag-set revoke, LeaseSet cache eviction) is unit-tested
+  (`tests/test-keyring-revocation`, green CI run 45278900262); the two-router
+  matrix cases 5/7 remain for E-1 (they need real delivery through the network).
+- **Threading rule (ADR-008):** revoke-path operations run in the destination's
+  `io_context` thread; the future F-8 control channel dispatches them with
+  `m_Service.post(...)`.
 - Any change to this policy requires a new ADR.
