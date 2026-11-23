@@ -29,7 +29,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential libboost-dev libssl-dev zlib1g-dev
+            build-essential libboost-dev libboost-program-options-dev libssl-dev zlib1g-dev
 
       - name: Record toolchain version
         run: |
