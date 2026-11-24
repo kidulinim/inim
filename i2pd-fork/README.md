@@ -12,7 +12,7 @@ control surface and hardens I2CP so no other app can reach it.
 
 ## Build evidence status (round 6 — IMPORTANT)
 
-**Current valid evidence:** commit `e687300c` (run https://github.com/kidulinim/inim/actions/runs/45361854919) passes all validation checks V1..V3 in `ci-evidence` (check `runs/e687300c.../result.txt` in the `ci-evidence` branch).
+**Current valid evidence:** commit `dae372c1` (run https://github.com/kidulinim/inim/actions/runs/45378939369): 10/10 patches, both unit tests pass (revocation + preload parser), V1..V5 validated. **Block 2 done**: `inim.test.keyring=<path>` test-only key-ring preload (patch 0010, `TestKeyRingPreload.{h,cpp}`, INIM_TEST_HOOKS gate) + `tests/test-keyring-preload` (broken base64 / wrong length / valid cases). Earlier evidence: commit `e687300c` (run https://github.com/kidulinim/inim/actions/runs/45361854919) passes all validation checks V1..V3 in `ci-evidence` (check `runs/e687300c.../result.txt` in the `ci-evidence` branch).
 
 **Earlier claims remain revoked as unproven.** The runs
 45278900262 (`95f921a`) and 45300879619 (`965bf59`) looked green, but their `build.log`
