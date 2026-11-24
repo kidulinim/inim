@@ -85,7 +85,8 @@ jobs:
         run: |
           set -o pipefail
           cd i2pd-src
-          ../i2pd-fork/scripts/apply-patches.sh | tee -a ../build.log
+          chmod +x ../i2pd-fork/scripts/apply-patches.sh
+          bash ../i2pd-fork/scripts/apply-patches.sh | tee -a ../build.log
           echo "=== applied patch ids (635b013a..HEAD) ===" | tee -a ../build.log
           git log --oneline 635b013a612ff47278ef02acf8580a28e10e26c5..HEAD | tee -a ../build.log
 
