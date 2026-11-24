@@ -99,13 +99,14 @@ jobs:
           test -x ./i2pd
           ./i2pd --version | grep -F 'i2pd version 2.61.0'
 
-      - name: Run fork unit tests (key-ring revoke; catches vanished definitions)
+      - name: Run fork unit tests (key-ring revoke + preload parser)
         id: unittests
         run: |
           set -o pipefail
           cd i2pd-src/tests
-          make test-keyring-revocation 2>&1 | tee -a ../../build.log
+          make test-keyring-revocation test-keyring-preload 2>&1 | tee -a ../../build.log
           ./test-keyring-revocation | tee -a ../../build.log
+          ./test-keyring-preload | tee -a ../../build.log
 
       - name: Upload build log (compiler, stderr, patch ids, tests)
         if: always()

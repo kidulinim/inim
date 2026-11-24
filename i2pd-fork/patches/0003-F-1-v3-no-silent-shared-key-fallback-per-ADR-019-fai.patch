@@ -1,7 +1,7 @@
 From 6944d3c0ad1a997cd49f9addb279d8bfc8a34421 Mon Sep 17 00:00:00 2001
 From: INIM Fork <inim@local>
 Date: Sun, 15 Nov 2026 19:15:31 +0000
-Subject: [PATCH 3/9] F-1 v3: no silent shared-key fallback per ADR-019 (fail
+Subject: [PATCH 03/10] F-1 v3: no silent shared-key fallback per ADR-019 (fail
  closed in per-contact mode); scrub base64 also on decode failure
 
 ---

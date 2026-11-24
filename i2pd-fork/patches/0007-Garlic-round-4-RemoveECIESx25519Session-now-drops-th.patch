@@ -1,7 +1,7 @@
 From 3c6a7ebcdf4a884778880d3eecf22455710c31a8 Mon Sep 17 00:00:00 2001
 From: INIM Fork <inim-dev@local>
 Date: Mon, 23 Nov 2026 13:29:37 +0000
-Subject: [PATCH 7/9] Garlic round 4: RemoveECIESx25519Session now drops the
+Subject: [PATCH 07/10] Garlic round 4: RemoveECIESx25519Session now drops the
  terminated sessions session tags from m_ECIESx25519Tags (Terminate() alone
  only sets a flag; tag sets stayed usable until periodic expire cleanup)
 

@@ -1,7 +1,7 @@
 From c84cebed906827dbf3d8c3781b3e20383c85043c Mon Sep 17 00:00:00 2001
 From: INIM Fork <inim-dev@local>
 Date: Mon, 23 Nov 2026 20:24:34 +0000
-Subject: [PATCH 9/9] Round 5 (Reviewer 1): restore upstream
+Subject: [PATCH 09/10] Round 5 (Reviewer 1): restore upstream
  RemoveECIESx25519Session + new RevokeECIESx25519Session (tag-map scan only on
  revoke); thread-safety rule comment (Destination.h) + ADR-008;
  RemoveKeyRingKey uses Revoke per-key; test hook InsertRemoteLeaseSetForTest +

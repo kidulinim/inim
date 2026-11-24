@@ -1,7 +1,7 @@
 From a946e408b3bc11692e3abcc96e3cf0aa7cde9b8b Mon Sep 17 00:00:00 2001
 From: INIM Fork <inim-dev@local>
 Date: Mon, 23 Nov 2026 13:25:07 +0000
-Subject: [PATCH 5/9] F-1 key ring round 4: restore SetKeyRingKey definition
+Subject: [PATCH 05/10] F-1 key ring round 4: restore SetKeyRingKey definition
  (scrub base64 copy incl. decode failure); write m_KeyRingCacheKeys under
  m_KeyRingMutex (data race fix, locking order documented)
 

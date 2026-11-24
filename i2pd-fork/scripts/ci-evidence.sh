@@ -54,12 +54,12 @@ else
     echo "V1 patches applied: saw '${ok_n:-none}', expected $expected -- FAIL" >&2
   fi
 
-  if grep -q 'test-keyring-revocation: all checks passed' "$LOG_FILE"; then
+  if grep -q 'test-keyring-revocation: all checks passed' "$LOG_FILE" &&      grep -q 'test-keyring-preload: all checks passed' "$LOG_FILE"; then
     v2=ok
-    echo "V2 unit-test marker: ok" >&2
+    echo "V2 unit-test markers (revocation + preload): ok" >&2
   else
     v2=FAIL
-    echo "V2 unit-test marker: NOT FOUND -- FAIL" >&2
+    echo "V2 unit-test markers (revocation + preload): NOT FOUND -- FAIL" >&2
   fi
 
   if grep -q 'No rule to make target' "$LOG_FILE"; then
