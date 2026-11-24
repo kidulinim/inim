@@ -44,7 +44,7 @@ Planned next: test-only key ring preload (for E-1, F-8 until then), then E-1 (ma
   reviewer can verify claims with `git fetch origin ci-evidence` alone (round 6:
   an earlier "green" run was invalid -- `git am` never applied any patch because
   the fresh clone had no committer identity and the pipeline without `pipefail`
-  masked the failure). A checked-in `build.log` in the main tree is not kept —
+  masked the failure). The first run passing all checks V1..V3 on commit `e687300c` (action run 45361854919, 9 patches applied, unit test passed). A checked-in `build.log` in the main tree is not kept —
   it goes stale immediately (it was removed for that reason).
 - Every upstream upgrade requires: §15 compatibility tests green + a diff note of what
   changed in the code areas our patches touch.

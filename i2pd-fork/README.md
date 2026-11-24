@@ -12,7 +12,9 @@ control surface and hardens I2CP so no other app can reach it.
 
 ## Build evidence status (round 6 — IMPORTANT)
 
-**Earlier "compiles clean / tests pass" claims are REVOKED as unproven.** The runs
+**Current valid evidence:** commit `e687300c` (run https://github.com/kidulinim/inim/actions/runs/45361854919) passes all validation checks V1..V3 in `ci-evidence` (check `runs/e687300c.../result.txt` in the `ci-evidence` branch).
+
+**Earlier claims remain revoked as unproven.** The runs
 45278900262 (`95f921a`) and 45300879619 (`965bf59`) looked green, but their `build.log`
 showed `git am` never applied any patch: the fresh upstream clone had no committer
 identity ("Committer identity unknown"), and the run-command pipeline `git am ... | tee`
