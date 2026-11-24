@@ -49,9 +49,12 @@ to prevent.
 - E-1 verifies: right key / wrong key / no key / no-auth LeaseSet rejected /
   key removed → cache evicted / expired LeaseSet → re-resolve via HostLookup.
 - As of Reviewer 1 round 5 the worker path (key ring set/get/remove, session +
-  tag-set revoke, LeaseSet cache eviction) is unit-tested
-  (`tests/test-keyring-revocation`, green CI run 45278900262); the two-router
-  matrix cases 5/7 remain for E-1 (they need real delivery through the network).
+  tag-set revoke, LeaseSet cache eviction) has unit tests
+  (`tests/test-keyring-revocation`) and the parser path is unit-tested
+  (`tests/test-keyring-preload`), but per Reviewer 1 round 6 **no green CI-run
+  claim is accepted until the `ci-evidence` validation passes** (V1..V3 in
+  `i2pd-fork/scripts/ci-evidence.sh`). The two-router matrix cases 5/7 remain
+  for E-1 (they need real delivery through the network).
 - **Threading rule (ADR-008):** revoke-path operations run in the destination's
   `io_context` thread; the future F-8 control channel dispatches them with
   `m_Service.post(...)`.

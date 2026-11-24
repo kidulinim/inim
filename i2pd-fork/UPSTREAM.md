@@ -36,13 +36,16 @@ Planned next: test-only key ring preload (for E-1, F-8 until then), then E-1 (ma
 - Keep the series rebased on the pinned base; rebases happen in one dedicated commit
   that touches only `UPSTREAM.md`'s pin and, if needed, re-generated patch files.
 - Each patch must apply with `git am` (sequential, no fuzz). CI checks this — and
-  any build claim ("compiles clean") is only valid with a green CI run attached to
-  that commit. Beginning with the CI-evidence workflow step, every run (including
-  failures) is committed to the `ci-evidence` branch under `runs/<commit-sha>/` +
-  maintained `STATUS.md` index, so a reviewer can verify claims with `git fetch
-  origin ci-evidence` alone (task-to-coder-ci-and-e1, block 1). A checked-in
-  `build.log` in the main tree is not kept — it goes stale immediately (it was
-  removed for that reason).
+  any build claim ("compiles clean") is only valid after the `ci-evidence` record
+  for that commit passes validation (checks V1..V3 in `i2pd-fork/scripts/ci-evidence.sh`:
+  `OK: N patch(es) applied` with N = number of patches, unit-test marker present,
+  no `No rule to make target`). Each run (including failures) is committed to the
+  `ci-evidence` branch under `runs/<commit-sha>/` with a `STATUS.md` index, so a
+  reviewer can verify claims with `git fetch origin ci-evidence` alone (round 6:
+  an earlier "green" run was invalid -- `git am` never applied any patch because
+  the fresh clone had no committer identity and the pipeline without `pipefail`
+  masked the failure). A checked-in `build.log` in the main tree is not kept —
+  it goes stale immediately (it was removed for that reason).
 - Every upstream upgrade requires: §15 compatibility tests green + a diff note of what
   changed in the code areas our patches touch.
 

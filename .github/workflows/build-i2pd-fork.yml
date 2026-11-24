@@ -5,7 +5,18 @@ name: build-i2pd-fork
 # committed to the `ci-evidence` branch under runs/<commit-sha>/ together with a
 # STATUS.md index (task-to-coder-ci-and-e1, block 1), so any "compiles clean" /
 # "tests pass" claim is verifiable with `git fetch origin ci-evidence` alone.
-# A patch is "done" only when this workflow is green on its commit.
+# A patch is "done" only when this workflow is green on its commit AND the
+# evidence validator (ci-evidence.sh: V1..V3) accepted the build.log as valid.
+#
+# Round 6 fixes (why older evidence lied): the run: blocks pipe `git am` /
+# `make` through `tee`, and without `set -o pipefail` the pipe tail (= tee)
+# reports success even when the left side FAILED -- git am needs a committer
+# identity in the fresh upstream clone ("Committer identity unknown"), and with
+# pipefail off that failure was masked red->green, and `git log --oneline`
+# printed full upstream history instead of just our series. All fixed: pipefail
+# in every step, git identity set before `git am` (in apply-patches.sh),
+# `git log --oneline 635b013a..HEAD` for patch ids, no bare "success" printed
+# without verification (run outcome only signals what the action returned).
 on:
   push:
     paths:
@@ -36,12 +47,14 @@ jobs:
       - name: Install build dependencies
         id: deps
         run: |
+          set -o pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential libboost-dev libboost-program-options-dev libssl-dev zlib1g-dev
 
       - name: Record toolchain version
         run: |
+          set -o pipefail
           {
             echo "=== compiler ==="
             g++ --version
@@ -54,11 +67,12 @@ jobs:
         env:
           # Pinned commit of the upstream 2.61.0 release (annotated tag 2.61.0 =
           # tag object 4fef5596f366be4b174a4d090d118e7679707a38 points at this
-          # commit, verified against the GitHub API 2026-11-23). Anchoring by
+          # commit, verified against the GitHub API on 2026-11-23). Anchoring by
           # commit is more reliable than an archive SHA-256: GitHub tarballs are
           # not guaranteed stable (Reviewer 1 round 4 item 3).
           I2PD_COMMIT: 635b013a612ff47278ef02acf8580a28e10e26c5
         run: |
+          set -o pipefail
           git clone -q https://github.com/PurpleI2P/i2pd.git i2pd-src
           cd i2pd-src
           git checkout -q "$I2PD_COMMIT"
@@ -69,14 +83,16 @@ jobs:
       - name: Apply patch series (git am, sequential) and record ids
         id: patches
         run: |
+          set -o pipefail
           cd i2pd-src
           ../i2pd-fork/scripts/apply-patches.sh | tee -a ../build.log
-          echo "=== applied patch ids ===" | tee -a ../build.log
-          git log --oneline | tee -a ../build.log
+          echo "=== applied patch ids (635b013a..HEAD) ===" | tee -a ../build.log
+          git log --oneline 635b013a612ff47278ef02acf8580a28e10e26c5..HEAD | tee -a ../build.log
 
       - name: Build
         id: build
         run: |
+          set -o pipefail
           cd i2pd-src
           make -j"$(nproc)" 2>&1 | tee -a ../build.log
           test -x ./i2pd
@@ -85,6 +101,7 @@ jobs:
       - name: Run fork unit tests (key-ring revoke; catches vanished definitions)
         id: unittests
         run: |
+          set -o pipefail
           cd i2pd-src/tests
           make test-keyring-revocation 2>&1 | tee -a ../../build.log
           ./test-keyring-revocation | tee -a ../../build.log
@@ -110,5 +127,6 @@ jobs:
           S_TESTS: ${{ steps.unittests.outcome }}
           CLONE_URL: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
         run: |
+          set -o pipefail
           chmod +x i2pd-fork/scripts/ci-evidence.sh
           i2pd-fork/scripts/ci-evidence.sh

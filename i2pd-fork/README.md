@@ -10,24 +10,48 @@ Stock `i2pd` gives us `i2cp.leaseSetPrivKey` as **one key per session** — usel
 INIM's per-contact credentials (§7, Appendix A F-1). The fork adds the missing runtime
 control surface and hardens I2CP so no other app can reach it.
 
+## Build evidence status (round 6 — IMPORTANT)
+
+**Earlier "compiles clean / tests pass" claims are REVOKED as unproven.** The runs
+45278900262 (`95f921a`) and 45300879619 (`965bf59`) looked green, but their `build.log`
+showed `git am` never applied any patch: the fresh upstream clone had no committer
+identity ("Committer identity unknown"), and the run-command pipeline `git am ... | tee`
+without `set -o pipefail` swallowed the real exit code, so the workflow recorded
+`apply_patches: success` and `overall: success` on a build that applied **zero** patches
+(Reviewer 1 round 6). The `git log --oneline` in the same log proved it — the tree at the
+patch step was still at upstream `635b013a`, and the test step printed
+`make: *** No rule to make target 'test-keyring-revocation'. Stop.`
+(`test-keyring-revocation` only exists after patch 0008).
+
+Fixed now: `set -o pipefail` in every run block, `git config user.name/user.email` set
+inside `i2pd-fork/scripts/apply-patches.sh` before `git am`, patch ids logged as
+`git log --oneline 635b013a..HEAD`, and `i2pd-fork/scripts/ci-evidence.sh` now **validates
+build.log** before writing `result.txt`:
+
+- **V1** build.log must contain `OK: N patch(es) applied` where N == number of files in `i2pd-fork/patches`;
+- **V2** build.log must contain `test-keyring-revocation: all checks passed`;
+- **V3** build.log must NOT contain `No rule to make target`.
+
+If any check fails, `result.txt` records `overall: invalid` (not `success`), even when
+the workflow job itself reports green. Read the `ci-evidence` branch (`runs/<sha>/`) for
+authoritative status — that verifier is the only thing that can turn "compiles clean"
+into an accepted claim from now on.
+
 ## Requirements (Appendix A)
 
 | ID | Requirement | Status |
 |---|---|---|
-| F-1 | Key ring: register client-auth **private** keys per remote Destination, keyed by the **stable blinded identity** `SHA256(stA ‖ A)` (what b33 carries), so lookups match regardless of the daily store hash. | **REWORKED (v3) after Reviewer 2, fixed after Reviewer 1 round 4.** Patches `patches/0001-…`, `patches/0003-…`, `patches/0004-…` (via `git format-patch`, incremental series): lookup driven by `request->requestedBlindedKey->GetIdentHash()` (new `BlindedPublicKey::GetIdentHash()`), **copies** under the mutex (no raw pointer after unlock), **stack/base64 buffers zeroized** (`lsKey.Fill(0)`, `key.Fill(0)`, base64-by-value scrub always — including when Base64 decoding fails), i2pd-style block layout. **No legacy shared-key mode at all (spec v0.10)**: `i2cp.leaseSetPrivKey` is rejected at parse time and the session is **refused** (`eI2CPSessionStatusRefused`), and a missing key-ring entry always means "decrypt without a key" (fail closed, [ADR-019](../docs/adr/ADR-019-key-ring-fallback-policy.md)). `m_KeyRingCacheKeys` is now written under `m_KeyRingMutex` (data race fixed, locking order documented in the code). `SetKeyRingKey` definition restored (round 4 regression fix), `RemoveKeyRingKey` evicts the cached LeaseSet (ident + store hash) and terminates the peer's ECIES sessions **together with their tag sets**. `git am` applies the whole series on clean 2.61.0 (CI: `.github/workflows/build-i2pd-fork.yml`, pinned upstream commit). Build evidence is the green CI run on commit `95f921a` (workflow [`build-i2pd-fork`, run 45278900262](https://github.com/kidulinim/inim/actions/runs/45278900262): `git am` sequential on clean upstream commit 635b013a, build, `test-keyring-revocation` all checks passed; uploads the `build.log` artifact: compiler version, applied patch ids, full build output and unit-test output) — there is no checked-in build log (it goes stale; see UPSTREAM.md). **Known limit: `SetKeyRingKey`/`RemoveKeyRingKey` are still unreachable from outside** — registration becomes reachable with the F-8 control channel (a test-only preload is planned for E-1); `GetKeyRingKey` is already consumed by the F-11 blind lookup. Behavior verification comes with E-1 (right key / wrong key / no key / revoked). **Cache-eviction bookkeeping is unit-tested** (`tests/test-keyring-revocation`, via the test-only hook `InsertRemoteLeaseSetForTest`), but the full E-1 matrix cases **5 (key removed -> cached LeaseSet evicted and not resolvable)** and **7 (LeaseSet without per-client auth -> core rejects it)** need a real two-router run and are **left to E-1** on the loopback stand (Reviewer 1 round 5 item 3). |
-| F-2/F-3 | Per-client auth lists and padding-to-buckets for the I2CP path are **client side** in v0.10 scope. | **UNCHUNKED after review; not implemented; not done.** Per App. A (v0.10), over I2CP the client (Rust core) builds and signs the Encrypted LeaseSet itself, so per-client auth lists and padding are generated by the core (ADR-018, not yet written; chosen between the two paths after E-1). F-2/F-3 are only needed for the embedded `ClientDestination` path. Early i2pd-side F-2/F-3 drafts are dropped — they are simply not correct for the TС plan. |
-| F-11 (v0.10, new) | I2CP lookup of a **blinded (b33) destination**: run the encrypted-LeaseSet request with the key ring (F-1) and return the resolved Destination to the session. | **Implemented (patches `patches/0002-…` + `patches/0006-…`, `git format-patch`; build evidence: green CI run on the commit, not a checked-in log, per review).** `HostLookupMessageHandler` `case 1` now branches: ident-hash addresses as before; blinded addresses go through `RequestDestinationWithEncryptedLeaseSet` **using only the session's own destination and key ring** (no fallback to `context.GetSharedLocalDestination()` after review), replying `HostReply` with the resolved identity once the LeaseSet arrives. **On decryption failure the request completes immediately with a null `HostReply`** (review fix) — the request timeout applies only when no floodfill answers at all. Re-resolution across the daily blinded-key rotation works automatically because the ring identity `SHA256(stA‖A)` is date-independent. **Runtime behavior not yet exercised:** needs E-1 verification (right key / wrong key / no key / revoked) |
-| F-4 | Router-level allowlist **keyed by the contact's ECIES-X25519 static public key(s)** (all enc types the profile uses), enforced in the New Session handler right after the sender static key is known and **before** any clove/payload reaches the app. Zero static key (anonymous new session) = dropped by default. A revocation also closes existing sessions and tag sets for that peer. | pending (v0.10 wording). Note: ContactCard and Enrollment must carry the contact's ECIES static keys in addition to `dest_b33` (spec §6.5 as amended) |
-| F-5 | Router events delivered over the **separate control channel** (F-8): tunnel readiness, LeaseSet published/confirmed, client key added/removed, peer connect/drop, auth failure counters. Length-prefixed **CBOR**, versioned schema; no ad-hoc I2CP extension types. | pending (v0.10 wording) |
-| F-6 | Runtime transit policy (enable, share %, max tunnels). | pending |
-| F-7 | Strip everything not needed: proxies, SAM/BOB, address-book subscriptions, web console beyond a local diagnostic socket, tunnels.conf defaults. | pending |
-| F-8 | **Separate minimal control channel**: Unix socket or in-process pipe; length-prefixed CBOR commands and events with a version; access by filesystem permission or token. I2CP stays **data plane only**. No TCP listener by default (other apps must not reach I2CP — it has no auth). | pending (v0.10 wording). Schema is fixed in ADR-008, but only after the ADR-018 path decision (per review) |
-| F-9 | Datagram2 (proto 19) and Datagram3 (20) over **I2CP**. | **[TV] — NOT confirmed.** Datagram2/3 handlers exist in upstream 2.61.0 (`DatagramDestination::HandleDatagram2/3`), but `I2CP.cpp` has no protocol-type handling — over I2CP this is unimplemented. Remaining work is I2CP dispatch of protocol types 19/20 |
-| F-10 | Reproducible builds, Android JNI library target, pinned upstream base, patch series kept rebased. | ongoing |
+| F-1 | Key ring: register client-auth **private** keys per remote Destination, keyed by the **stable blinded identity** `SHA256(stA ‖ A)` (what b33 carries). | **REWORKED (v3), fixed after Reviewer 1 rounds 4–6.** Patches `0001`, `0003`, `0004` (+ `0005` regression fix, `0006` indent fix, `0007` tag-set revoke split). Lookup driven by `request->requestedBlindedKey->GetIdentHash()`, copies under the mutex, stack/base64 buffers zeroized (scrub always, incl. decode failure). No legacy shared-key mode: `i2cp.leaseSetPrivKey` is rejected at parse time and the session is **refused** (`eI2CPSessionStatusRefused`), missing key-ring entry always means "decrypt without a key" (fail closed, ADR-019). `m_KeyRingCacheKeys` written under `m_KeyRingMutex` (race fixed, locking order documented). `SetKeyRingKey` definition restored (round 4 regression). `RemoveKeyRingKey` evicts cached LeaseSet (ident + store hash) and uses `RevokeECIESx25519Session` (tag sets dropped). Cache-eviction bookkeeping unit-tested (`tests/test-keyring-revocation` via test-only hook `InsertRemoteLeaseSetForTest`). Cases 5/7 of the E-1 matrix need real two-router run (left to E-1). |
+| F-2/F-3 | Per-client auth lists and padding-to-buckets are **client side** (v0.10 scope, i2pd only wraps what the core signs). | dropped from the i2pd fork; handled later by the Rust core (ADR-018, decided after E-1). |
+| F-11 | I2CP lookup of a **blinded (b33) destination** via the encrypted-LeaseSet request + key ring, returning the resolved Destination. | Implemented in patches `0002` (`HostLookupMessageHandler` case 1) and `0006` (indent fix). Uses only the session's own destination + key ring (no fallback to `context.GetSharedLocalDestination()`). Decryption failure → immediate null `HostReply`, timeout only if no floodfill answers. Daily-key rotation re-resolution works because ring identity `SHA256(stA‖A)` is date-independent. Runtime behavior still needs E-1 verification. |
+| F-4..F-8, F-10 | As per spec v0.10 — pending (allowlist in New Session, control channel, transit policy, strip unused surfaces, reproducible builds). | not started (F-4 is gated behind the E-1 run per review order). |
+| F-9 | Datagram2/3 over I2CP. | **[TV] — not confirmed.** Handlers exist in upstream's `DatagramDestination`, but `I2CP.cpp` has no protocol-type dispatch — needs its own work. |
 
 ## Layout
 
-- `patches/` — one patch per fork feature, applied in order on the pinned base.
+- `patches/` — one patch per fork feature (currently 0001–0009), applied in order on the pinned base.
+- `scripts/apply-patches.sh` — sequential `git am` with committer identity set; prints `OK: N patch(es) applied` and `git log --oneline 635b013a..HEAD`.
+- `scripts/ci-evidence.sh` — evidence validator + writer for the `ci-evidence` branch (checks V1..V3, see above).
 - `UPSTREAM.md` — pinned base tag/commit, rebase instructions, patch ordering.
 
 ## Building (base + patches)
@@ -38,7 +62,7 @@ On the pinned base tag, apply patches with `git am` (same as CI) and build — o
 ```bash
 git clone https://github.com/PurpleI2P/i2pd.git
 cd i2pd
-git checkout 2.61.0                  # pinned tag, see UPSTREAM.md
+git checkout 635b013a612ff47278ef02acf8580a28e10e26c5   # pinned commit, see UPSTREAM.md
 ../i2pd-fork/scripts/apply-patches.sh   # sequential git am
 make -j$(nproc)
 ```
