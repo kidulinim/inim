@@ -7,5 +7,5 @@ build/test claim for a commit: read `runs/<sha>/` in this branch.
 |---|---|---|---|---|
 | e687300c62395ba295966ecc82b1454d47a0ebfc | 2026-11-24T09:08:15Z | success | success |  V1=ok V2=ok V3=ok | https://github.com/kidulinim/inim/actions/runs/45361854919 |
 | 9e234723ffcc5c2674e706a7e926fbfce2a71163 | 2026-11-24T08:56:43Z | invalid | skipped |  V1=FAIL V2=FAIL V3=ok | https://github.com/kidulinim/inim/actions/runs/45360391539 |
-| 965bf5910d48162f750557a691c43348fd8a302a | 2026-11-24T00:58:05Z | success | success | https://github.com/kidulinim/inim/actions/runs/45300879619 |
-| 61c41e817149318b8eef269584a8da8194225d60 | 2026-11-24T00:10:31Z | success | success | https://github.com/kidulinim/inim/actions/runs/45294540158 |
+| 965bf5910d48162f750557a691c43348fd8a302a | 2026-11-24T00:58:05Z | success (REVOKED round 7 -- false: patches not applied) | success | https://github.com/kidulinim/inim/actions/runs/45300879619 |
+| 61c41e817149318b8eef269584a8da8194225d60 | 2026-11-24T00:10:31Z | success (REVOKED round 7 -- false: patches not applied) | success | https://github.com/kidulinim/inim/actions/runs/45294540158 |
