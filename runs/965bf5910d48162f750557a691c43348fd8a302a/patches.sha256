@@ -1,0 +1,9 @@
+bf6a116166143520e06086bd24fa1666255e1e28c9e2ef64a1bc9e661fbc55a0  ./0001-F-1-key-ring-by-blinded-ident-SHA256-stA-A-safe-copi.patch
+7eefaadfe06df29d8f9bc01c32314148d0d6ab681e7477ed259049ac1c966585  ./0002-F-11-I2CP-HostLookup-case-1-resolves-blinded-b33-add.patch
+1ae83d8f9bbd5f1166e35733f2f409bfe1e589bf603933cb3e22cb5b9b8783c5  ./0003-F-1-v3-no-silent-shared-key-fallback-per-ADR-019-fai.patch
+c22ebd4333578ae00665193658db33eafd7749101141fc6903b96a089c37376f  ./0004-F-1-F-11-v0.10-Reviewer-1-round-3-items-1-5-reject-i.patch
+c12ae47e4e772ad26c0409f2791a1c0a3af1660296e0be0649c4de66a9d92028  ./0005-F-1-key-ring-round-4-restore-SetKeyRingKey-definitio.patch
+5a78377ca58ce742a419336516e56e67839e2440a39817886753108e18943ff7  ./0006-I2CP-round-4-refuse-session-creation-on-i2cp.leaseSe.patch
+cb8a17ec4f90344cd93e398075ccbc0e7a95a42881f3bf3d3c62f5e42dd31e69  ./0007-Garlic-round-4-RemoveECIESx25519Session-now-drops-th.patch
+b9de3199d53b31df9e40759bf9b8b832f6c876be5fcba961d352033a4aa05902  ./0008-Tests-key-ring-revocation-unit-test-SetKeyRingKey-ro.patch
+086fbe1bc2296dd533ebb3d7cbe842d811960e1d19e64e331cc49f2d89450b8a  ./0009-Round-5-Reviewer-1-restore-upstream-RemoveECIESx2551.patch
