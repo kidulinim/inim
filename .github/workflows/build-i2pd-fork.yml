@@ -1,10 +1,11 @@
 name: build-i2pd-fork
-
 # INIM i2pd fork CI (spec App. A / F-10, Reviewer 1 round 3 item 8): applies the
-# patch series sequentially on a clean upstream 2.61.0 with `git am` and builds it.
-# A patch is "done" only after this workflow is green on its commit ("compiles
-# clean" is meaningless without a green CI run).
-
+# patch series sequentially on a clean upstream 2.61.0 (pinned commit) with
+# `git am`, builds it and runs the fork unit tests. Every run (pass or fail) is
+# committed to the `ci-evidence` branch under runs/<commit-sha>/ together with a
+# STATUS.md index (task-to-coder-ci-and-e1, block 1), so any "compiles clean" /
+# "tests pass" claim is verifiable with `git fetch origin ci-evidence` alone.
+# A patch is "done" only when this workflow is green on its commit.
 on:
   push:
     paths:
@@ -18,14 +19,22 @@ on:
       - '.github/workflows/build-i2pd-fork.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    # contents: write is used only by the final evidence step to push the run
+    # record to the ci-evidence branch -- never to main.
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
       - name: Install build dependencies
+        id: deps
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -41,10 +50,11 @@ jobs:
           } | tee build.log
 
       - name: Fetch clean i2pd 2.61.0 (pinned commit)
+        id: fetch
         env:
-          # Pinned commit of the upstream 2.61.0 release (the annotated tag 2.61.0
-          # = tag object 4fef5596f366be4b174a4d090d118e7679707a38 points at this
-          # commit; verified against the GitHub API on 2026-11-23). Anchoring by
+          # Pinned commit of the upstream 2.61.0 release (annotated tag 2.61.0 =
+          # tag object 4fef5596f366be4b174a4d090d118e7679707a38 points at this
+          # commit, verified against the GitHub API 2026-11-23). Anchoring by
           # commit is more reliable than an archive SHA-256: GitHub tarballs are
           # not guaranteed stable (Reviewer 1 round 4 item 3).
           I2PD_COMMIT: 635b013a612ff47278ef02acf8580a28e10e26c5
@@ -57,6 +67,7 @@ jobs:
           git log --oneline -1 | tee -a ../build.log
 
       - name: Apply patch series (git am, sequential) and record ids
+        id: patches
         run: |
           cd i2pd-src
           ../i2pd-fork/scripts/apply-patches.sh | tee -a ../build.log
@@ -64,20 +75,95 @@ jobs:
           git log --oneline | tee -a ../build.log
 
       - name: Build
+        id: build
         run: |
           cd i2pd-src
           make -j"$(nproc)" 2>&1 | tee -a ../build.log
           test -x ./i2pd
           ./i2pd --version | grep -F 'i2pd version 2.61.0'
-      - name: Run fork unit tests (key-ring revoke — catches vanished definitions)
+
+      - name: Run fork unit tests (key-ring revoke; catches vanished definitions)
+        id: unittests
         run: |
           cd i2pd-src/tests
           make test-keyring-revocation 2>&1 | tee -a ../../build.log
           ./test-keyring-revocation | tee -a ../../build.log
 
-      - name: Upload build log (compiler, stderr, patch ids)
+      - name: Upload build log (compiler, stderr, patch ids, tests)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: build-log
           path: build.log
+
+      - name: Record evidence to ci-evidence branch
+        if: always()
+        env:
+          WF_NAME: ${{ github.workflow }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          S_DEPS: ${{ steps.deps.outcome }}
+          S_FETCH: ${{ steps.fetch.outcome }}
+          S_PATCHES: ${{ steps.patches.outcome }}
+          S_BUILD: ${{ steps.build.outcome }}
+          S_TESTS: ${{ steps.unittests.outcome }}
+        run: |
+          set +e
+          sha="${{ github.sha }}"
+          date_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          case "${{ job.status }}" in success) overall=success ;; *) overall=failure ;; esac
+
+          # Receipt of the exact patch contents of this repo at $sha.
+          ( cd i2pd-fork/patches && sha256sum ./*.patch ) > patches.sha256
+
+          {
+            echo "workflow: $WF_NAME"
+            echo "run: $RUN_URL"
+            echo "commit: $sha"
+            echo "date_utc: $date_utc"
+            echo "steps:"
+            echo "  checkout: success"
+            echo "  install_deps: ${S_DEPS:-not_run}"
+            echo "  fetch_upstream: ${S_FETCH:-not_run}"
+            echo "  apply_patches: ${S_PATCHES:-not_run}"
+            echo "  build: ${S_BUILD:-not_run}"
+            echo "  unit_tests: ${S_TESTS:-not_run}"
+            echo "overall: $overall"
+          } > result.txt
+
+          # Get the ci-evidence branch; create it if this is the first run.
+          clone_url="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git init -q evidence
+          cd evidence
+          git config user.name "inim-ci"
+          git config user.email "ci@inim.local"
+          git remote add origin "$clone_url"
+          if git fetch -q origin ci-evidence; then
+            git checkout -q -b ci-evidence FETCH_HEAD
+          else
+            git checkout -q --orphan ci-evidence
+          fi
+
+          mkdir -p "runs/$sha"
+          cp ../result.txt ../build.log ../patches.sha256 "runs/$sha/"
+
+          # STATUS.md: newest first, table of the latest 20 runs, filled by CI.
+          if [ ! -f STATUS.md ]; then
+            {
+              echo '# CI evidence index'
+              echo ''
+              echo 'Generated by the `build-i2pd-fork` workflow (Record evidence step). To verify any'
+              echo 'build/test claim for a commit: read `runs/<sha>/` in this branch.'
+              echo ''
+              echo '| commit | date_utc | overall | unit_tests | run |'
+              echo '|---|---|---|---|---|'
+            } > STATUS.md
+          fi
+          row="| $sha | $date_utc | $overall | ${S_TESTS:-not_run} | $RUN_URL |"
+          # header = first 7 lines (title, 3 desc, blank, header row, separator)
+          { sed -n '1,7p' STATUS.md; echo "$row"; sed -n '8,$p' STATUS.md | head -19; } > STATUS.tmp
+          mv STATUS.tmp STATUS.md
+
+          git add -A
+          git commit -q -m "evidence: $sha $overall ($date_utc)"
+          git push -q origin HEAD:ci-evidence
+          echo "evidence for $sha pushed to ci-evidence"
