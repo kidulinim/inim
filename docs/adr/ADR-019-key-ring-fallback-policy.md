@@ -50,8 +50,7 @@ to prevent.
   key removed → cache evicted / expired LeaseSet → re-resolve via HostLookup.
 - As of Reviewer 1 round 5 the worker path (key ring set/get/remove, session +
   tag-set revoke, LeaseSet cache eviction) has unit tests
-  (`tests/test-keyring-revocation`) and the parser path is unit-tested
-  (`tests/test-keyring-preload`), and the `ci-evidence` validation (V1..V3)
+  (`tests/test-keyring-revocation`), and the `ci-evidence` validation (V1..V3)
   now passes on commit `e687300c` (run 45361854919: all 9 patches applied,
   unit test passed, no stale targets -- check `runs/` in branch `ci-evidence`). The two-router matrix cases 5/7 remain
   for E-1 (they need real delivery through the network).

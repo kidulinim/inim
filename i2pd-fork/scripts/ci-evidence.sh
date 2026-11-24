@@ -9,6 +9,8 @@
 #       files in i2pd-fork/patches
 #   V2  build.log contains "test-keyring-revocation: all checks passed"
 #   V3  build.log does NOT contain "No rule to make target"
+#   V4  number of "Applying:" lines equals number of patch files (round 7)
+#   V5  at least one build-log line per patched source .cpp (round 7)
 # If any check fails the record is written as overall: invalid regardless of
 # what the actions runner reports. Default status is "unconfirmed", not
 # "success". This is called *even on red runs* (if: always()).
@@ -39,7 +41,7 @@ overall="$JOB_OVERALL"
 evidence_notes=""
 if [ ! -f "$LOG_FILE" ]; then
   overall="invalid"
-  evidence_notes="$evidence_notes V1=missing-log V2=missing-log V3=missing-log"
+  evidence_notes="$evidence_notes V1=missing-log V2=missing-log V3=missing-log V4=missing-log V5=missing-log"
 else
   expected=$(ls i2pd-fork/patches/*.patch 2>/dev/null | wc -l)
   ok_line=$(grep -c '^OK: [0-9]* patch(es) applied' "$LOG_FILE" || true)
@@ -68,12 +70,38 @@ else
     echo "V3 'No rule to make target' absent -- ok" >&2
   fi
 
-  if [ "$v1" = "FAIL" ] || [ "$v2" = "FAIL" ] || [ "$v3" = "FAIL" ]; then
+  # V4 (round 7 item 3): every patch must have been really applied --
+  # count "Applying:" lines == number of patch files.
+  applying_n=$(grep -c '^Applying:' "$LOG_FILE" || true)
+  if [ "$applying_n" = "$expected" ]; then
+    v4=ok
+    echo "V4 Applying: lines $applying_n/$expected -- ok"
+  else
+    v4=FAIL
+    echo "V4 Applying: lines $applying_n/$expected -- FAIL" >&2
+  fi
+
+  # V5 (round 7 item 3): at least one compiler line per source file changed by
+  # the patch series (Destination|Blinding|LeaseSet|I2CP|Garlic cpp files).
+  v5=ok
+  for src in Destination Blinding LeaseSet I2CP Garlic; do
+    # the patch hunks modify "$src.cpp" under some directory; we require the
+    # build log to contain at least one compile/mention line for that file.
+    if ! grep -q "$src\.cpp" "$LOG_FILE"; then
+      v5=FAIL
+      echo "V5 no compile line for $src.cpp -- FAIL" >&2
+    fi
+  done
+  if [ "$v5" = ok ]; then
+    echo "V5 compile lines present for all patched sources -- ok"
+  fi
+
+  if [ "$v1" = "FAIL" ] || [ "$v2" = "FAIL" ] || [ "$v3" = "FAIL" ] || [ "$v4" = "FAIL" ] || [ "$v5" = "FAIL" ]; then
     overall="invalid"
-    evidence_notes="$evidence_notes V1=$v1 V2=$v2 V3=$v3"
+    evidence_notes="$evidence_notes V1=$v1 V2=$v2 V3=$v3 V4=$v4 V5=$v5"
     echo "evidence validation FAILED -- record marked invalid (job status was: $JOB_OVERALL)" >&2
   else
-    evidence_notes="$evidence_notes V1=ok V2=ok V3=ok"
+    evidence_notes="$evidence_notes V1=ok V2=ok V3=ok V4=ok V5=ok"
     echo "evidence validation PASS"
   fi
 fi
@@ -120,6 +148,8 @@ mkdir -p "runs/$SHA"
 cp ../result.txt ../build.log ../patches.sha256 "runs/$SHA/"
 
 # STATUS.md: newest first, table of the latest 20 runs, filled by CI.
+# Existing rows keep any "REVOKED" annotations verbatim (round 7 item 2): a row
+# is only ever trimmed after 20 entries, never rewritten or reclassified here.
 if ! grep -q '^| commit |' STATUS.md 2>/dev/null; then
   {
     echo '# CI evidence index'
