@@ -1,0 +1,150 @@
+=== compiler ===
+g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+Copyright (C) 2023 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+=== make ===
+GNU Make 4.3
+=== upstream base ===
+635b013a [i18n] update translations
+=== patch count: 9 ===
+== git am 0001-F-1-key-ring-by-blinded-ident-SHA256-stA-A-safe-copi.patch
+Applying: F-1: key ring by blinded ident (SHA256(stA || A)), safe copies, zeroize stack buffers
+== git am 0002-F-11-I2CP-HostLookup-case-1-resolves-blinded-b33-add.patch
+Applying: F-11: I2CP HostLookup case 1 resolves blinded (b33) addresses via RequestDestinationWithEncryptedLeaseSet + key ring
+== git am 0003-F-1-v3-no-silent-shared-key-fallback-per-ADR-019-fai.patch
+Applying: F-1 v3: no silent shared-key fallback per ADR-019 (fail closed in per-contact mode); scrub base64 also on decode failure
+== git am 0004-F-1-F-11-v0.10-Reviewer-1-round-3-items-1-5-reject-i.patch
+Applying: F-1/F-11 v0.10 (Reviewer 1 round 3, items 1-5): reject i2cp.leaseSetPrivKey (no legacy mode); require per-client auth (DH) on remote LS2; F-11 immediate nullptr reply + session-destination only; RemoveKeyRingKey evicts LeaseSet cache (ident+store hash) and terminates peer sessions
+== git am 0005-F-1-key-ring-round-4-restore-SetKeyRingKey-definitio.patch
+Applying: F-1 key ring round 4: restore SetKeyRingKey definition (scrub base64 copy incl. decode failure); write m_KeyRingCacheKeys under m_KeyRingMutex (data race fix, locking order documented)
+== git am 0006-I2CP-round-4-refuse-session-creation-on-i2cp.leaseSe.patch
+Applying: I2CP round 4: refuse session creation on i2cp.leaseSetPrivKey (rejected at parse time per ADR-019, not just a log line); fix indentation in F-11 blinded branch (one level too little)
+== git am 0007-Garlic-round-4-RemoveECIESx25519Session-now-drops-th.patch
+Applying: Garlic round 4: RemoveECIESx25519Session now drops the terminated sessions session tags from m_ECIESx25519Tags (Terminate() alone only sets a flag; tag sets stayed usable until periodic expire cleanup)
+== git am 0008-Tests-key-ring-revocation-unit-test-SetKeyRingKey-ro.patch
+Applying: Tests: key-ring revocation unit test (SetKeyRingKey round trip + tag eviction on RemoveKeyRingKey, round 4 items 1/6); fix tests/Makefile for header-only Boost.System
+== git am 0009-Round-5-Reviewer-1-restore-upstream-RemoveECIESx2551.patch
+Applying: Round 5 (Reviewer 1): restore upstream RemoveECIESx25519Session + new RevokeECIESx25519Session (tag-map scan only on revoke); thread-safety rule comment (Destination.h) + ADR-008; RemoveKeyRingKey uses Revoke per-key; test hook InsertRemoteLeaseSetForTest + cache-eviction tests; brace indentation in cache-write block; matrix cases 5/7 documented as left to E-1
+OK: 9 patch(es) applied on 6b04e47c Round 5 (Reviewer 1): restore upstream RemoveECIESx25519Session + new RevokeECIESx25519Session (tag-map scan only on revoke); thread-safety rule comment (Destination.h) + ADR-008; RemoveKeyRingKey uses Revoke per-key; test hook InsertRemoteLeaseSetForTest + cache-eviction tests; brace indentation in cache-write block; matrix cases 5/7 documented as left to E-1
+=== applied patch ids (635b013a612ff47278ef02acf8580a28e10e26c5..HEAD) ===
+6b04e47c Round 5 (Reviewer 1): restore upstream RemoveECIESx25519Session + new RevokeECIESx25519Session (tag-map scan only on revoke); thread-safety rule comment (Destination.h) + ADR-008; RemoveKeyRingKey uses Revoke per-key; test hook InsertRemoteLeaseSetForTest + cache-eviction tests; brace indentation in cache-write block; matrix cases 5/7 documented as left to E-1
+083e108a Tests: key-ring revocation unit test (SetKeyRingKey round trip + tag eviction on RemoveKeyRingKey, round 4 items 1/6); fix tests/Makefile for header-only Boost.System
+072a61e1 Garlic round 4: RemoveECIESx25519Session now drops the terminated sessions session tags from m_ECIESx25519Tags (Terminate() alone only sets a flag; tag sets stayed usable until periodic expire cleanup)
+f674aaf0 I2CP round 4: refuse session creation on i2cp.leaseSetPrivKey (rejected at parse time per ADR-019, not just a log line); fix indentation in F-11 blinded branch (one level too little)
+e917967a F-1 key ring round 4: restore SetKeyRingKey definition (scrub base64 copy incl. decode failure); write m_KeyRingCacheKeys under m_KeyRingMutex (data race fix, locking order documented)
+00abadd7 F-1/F-11 v0.10 (Reviewer 1 round 3, items 1-5): reject i2cp.leaseSetPrivKey (no legacy mode); require per-client auth (DH) on remote LS2; F-11 immediate nullptr reply + session-destination only; RemoveKeyRingKey evicts LeaseSet cache (ident+store hash) and terminates peer sessions
+732d9640 F-1 v3: no silent shared-key fallback per ADR-019 (fail closed in per-contact mode); scrub base64 also on decode failure
+b9fd648c F-11: I2CP HostLookup case 1 resolves blinded (b33) addresses via RequestDestinationWithEncryptedLeaseSet + key ring
+f64d0833 F-1: key ring by blinded ident (SHA256(stA || A)), safe copies, zeroize stack buffers
+=== applied patch ids (635b013a..HEAD) ===
+6b04e47c Round 5 (Reviewer 1): restore upstream RemoveECIESx25519Session + new RevokeECIESx25519Session (tag-map scan only on revoke); thread-safety rule comment (Destination.h) + ADR-008; RemoveKeyRingKey uses Revoke per-key; test hook InsertRemoteLeaseSetForTest + cache-eviction tests; brace indentation in cache-write block; matrix cases 5/7 documented as left to E-1
+083e108a Tests: key-ring revocation unit test (SetKeyRingKey round trip + tag eviction on RemoveKeyRingKey, round 4 items 1/6); fix tests/Makefile for header-only Boost.System
+072a61e1 Garlic round 4: RemoveECIESx25519Session now drops the terminated sessions session tags from m_ECIESx25519Tags (Terminate() alone only sets a flag; tag sets stayed usable until periodic expire cleanup)
+f674aaf0 I2CP round 4: refuse session creation on i2cp.leaseSetPrivKey (rejected at parse time per ADR-019, not just a log line); fix indentation in F-11 blinded branch (one level too little)
+e917967a F-1 key ring round 4: restore SetKeyRingKey definition (scrub base64 copy incl. decode failure); write m_KeyRingCacheKeys under m_KeyRingMutex (data race fix, locking order documented)
+00abadd7 F-1/F-11 v0.10 (Reviewer 1 round 3, items 1-5): reject i2cp.leaseSetPrivKey (no legacy mode); require per-client auth (DH) on remote LS2; F-11 immediate nullptr reply + session-destination only; RemoveKeyRingKey evicts LeaseSet cache (ident+store hash) and terminates peer sessions
+732d9640 F-1 v3: no silent shared-key fallback per ADR-019 (fail closed in per-contact mode); scrub base64 also on decode failure
+b9fd648c F-11: I2CP HostLookup case 1 resolves blinded (b33) addresses via RequestDestinationWithEncryptedLeaseSet + key ring
+f64d0833 F-1: key ring by blinded ident (SHA256(stA || A)), safe copies, zeroize stack buffers
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Base.o libi2pd/Base.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Blinding.o libi2pd/Blinding.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Config.o libi2pd/Config.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Crypto.o libi2pd/Crypto.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/CryptoKey.o libi2pd/CryptoKey.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Datagram.o libi2pd/Datagram.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Destination.o libi2pd/Destination.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/ECIESX25519AEADRatchetSession.o libi2pd/ECIESX25519AEADRatchetSession.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Ed25519.o libi2pd/Ed25519.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Elligator.o libi2pd/Elligator.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/FS.o libi2pd/FS.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Family.o libi2pd/Family.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Garlic.o libi2pd/Garlic.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Gost.o libi2pd/Gost.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Gzip.o libi2pd/Gzip.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/HTTP.o libi2pd/HTTP.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/I2NPProtocol.o libi2pd/I2NPProtocol.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/I2PEndian.o libi2pd/I2PEndian.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/IdentMetrics.o libi2pd/IdentMetrics.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Identity.o libi2pd/Identity.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/KadDHT.o libi2pd/KadDHT.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/LeaseSet.o libi2pd/LeaseSet.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Log.o libi2pd/Log.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/NTCP2.o libi2pd/NTCP2.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/NetDb.o libi2pd/NetDb.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/NetDbRequests.o libi2pd/NetDbRequests.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/PostQuantum.o libi2pd/PostQuantum.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Profiling.o libi2pd/Profiling.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Reseed.o libi2pd/Reseed.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/RouterContext.o libi2pd/RouterContext.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/RouterInfo.o libi2pd/RouterInfo.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/SSU2.o libi2pd/SSU2.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/SSU2OutOfSession.o libi2pd/SSU2OutOfSession.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/SSU2Session.o libi2pd/SSU2Session.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Signature.o libi2pd/Signature.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Streaming.o libi2pd/Streaming.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Timestamp.o libi2pd/Timestamp.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/TransitTunnel.o libi2pd/TransitTunnel.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Transports.o libi2pd/Transports.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Tunnel.o libi2pd/Tunnel.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/TunnelBase.o libi2pd/TunnelBase.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/TunnelConfig.o libi2pd/TunnelConfig.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/TunnelEndpoint.o libi2pd/TunnelEndpoint.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/TunnelGateway.o libi2pd/TunnelGateway.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/TunnelPool.o libi2pd/TunnelPool.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/api.o libi2pd/api.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/util.o libi2pd/util.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd_client/AddressBook.o libi2pd_client/AddressBook.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd_client/BOB.o libi2pd_client/BOB.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd_client/ClientContext.o libi2pd_client/ClientContext.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd_client/HTTPProxy.o libi2pd_client/HTTPProxy.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd_client/I2CP.o libi2pd_client/I2CP.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd_client/I2PService.o libi2pd_client/I2PService.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd_client/I2PTunnel.o libi2pd_client/I2PTunnel.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd_client/MatchedDestination.o libi2pd_client/MatchedDestination.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd_client/SAM.o libi2pd_client/SAM.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd_client/SOCKS.o libi2pd_client/SOCKS.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd_client/Torrents.o libi2pd_client/Torrents.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd_client/UDPTunnel.o libi2pd_client/UDPTunnel.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Afrikaans.o i18n/Afrikaans.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Armenian.o i18n/Armenian.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Chinese.o i18n/Chinese.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Czech.o i18n/Czech.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/English.o i18n/English.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Esperanto.o i18n/Esperanto.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Filipino.o i18n/Filipino.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Finnish.o i18n/Finnish.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/French.o i18n/French.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/German.o i18n/German.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Hebrew.o i18n/Hebrew.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Hindi.o i18n/Hindi.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/I18N.o i18n/I18N.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Italian.o i18n/Italian.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Persian.o i18n/Persian.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Polish.o i18n/Polish.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Portuguese.o i18n/Portuguese.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Russian.o i18n/Russian.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Spanish.o i18n/Spanish.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Swedish.o i18n/Swedish.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Turkish.o i18n/Turkish.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Turkmen.o i18n/Turkmen.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Ukrainian.o i18n/Ukrainian.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/i18n/Uzbek.o i18n/Uzbek.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/daemon/Daemon.o daemon/Daemon.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/daemon/HTTPServer.o daemon/HTTPServer.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/daemon/HaikuDaemon.o daemon/HaikuDaemon.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/daemon/I2PControl.o daemon/I2PControl.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/daemon/I2PControlHandlers.o daemon/I2PControlHandlers.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/daemon/UPnP.o daemon/UPnP.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/daemon/UnixDaemon.o daemon/UnixDaemon.cpp
+g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/daemon/i2pd.o daemon/i2pd.cpp
+ar -r libi2pd.a obj/libi2pd/Base.o obj/libi2pd/Blinding.o obj/libi2pd/Config.o obj/libi2pd/Crypto.o obj/libi2pd/CryptoKey.o obj/libi2pd/Datagram.o obj/libi2pd/Destination.o obj/libi2pd/ECIESX25519AEADRatchetSession.o obj/libi2pd/Ed25519.o obj/libi2pd/Elligator.o obj/libi2pd/FS.o obj/libi2pd/Family.o obj/libi2pd/Garlic.o obj/libi2pd/Gost.o obj/libi2pd/Gzip.o obj/libi2pd/HTTP.o obj/libi2pd/I2NPProtocol.o obj/libi2pd/I2PEndian.o obj/libi2pd/IdentMetrics.o obj/libi2pd/Identity.o obj/libi2pd/KadDHT.o obj/libi2pd/LeaseSet.o obj/libi2pd/Log.o obj/libi2pd/NTCP2.o obj/libi2pd/NetDb.o obj/libi2pd/NetDbRequests.o obj/libi2pd/PostQuantum.o obj/libi2pd/Profiling.o obj/libi2pd/Reseed.o obj/libi2pd/RouterContext.o obj/libi2pd/RouterInfo.o obj/libi2pd/SSU2.o obj/libi2pd/SSU2OutOfSession.o obj/libi2pd/SSU2Session.o obj/libi2pd/Signature.o obj/libi2pd/Streaming.o obj/libi2pd/Timestamp.o obj/libi2pd/TransitTunnel.o obj/libi2pd/Transports.o obj/libi2pd/Tunnel.o obj/libi2pd/TunnelBase.o obj/libi2pd/TunnelConfig.o obj/libi2pd/TunnelEndpoint.o obj/libi2pd/TunnelGateway.o obj/libi2pd/TunnelPool.o obj/libi2pd/api.o obj/libi2pd/util.o
+ar: creating libi2pd.a
+ar -r libi2pdclient.a obj/libi2pd_client/AddressBook.o obj/libi2pd_client/BOB.o obj/libi2pd_client/ClientContext.o obj/libi2pd_client/HTTPProxy.o obj/libi2pd_client/I2CP.o obj/libi2pd_client/I2PService.o obj/libi2pd_client/I2PTunnel.o obj/libi2pd_client/MatchedDestination.o obj/libi2pd_client/SAM.o obj/libi2pd_client/SOCKS.o obj/libi2pd_client/Torrents.o obj/libi2pd_client/UDPTunnel.o
+ar: creating libi2pdclient.a
+ar -r libi2pdlang.a obj/i18n/Afrikaans.o obj/i18n/Armenian.o obj/i18n/Chinese.o obj/i18n/Czech.o obj/i18n/English.o obj/i18n/Esperanto.o obj/i18n/Filipino.o obj/i18n/Finnish.o obj/i18n/French.o obj/i18n/German.o obj/i18n/Hebrew.o obj/i18n/Hindi.o obj/i18n/I18N.o obj/i18n/Italian.o obj/i18n/Persian.o obj/i18n/Polish.o obj/i18n/Portuguese.o obj/i18n/Russian.o obj/i18n/Spanish.o obj/i18n/Swedish.o obj/i18n/Turkish.o obj/i18n/Turkmen.o obj/i18n/Ukrainian.o obj/i18n/Uzbek.o
+ar: creating libi2pdlang.a
+g++   -o i2pd obj/daemon/Daemon.o obj/daemon/HTTPServer.o obj/daemon/HaikuDaemon.o obj/daemon/I2PControl.o obj/daemon/I2PControlHandlers.o obj/daemon/UPnP.o obj/daemon/UnixDaemon.o obj/daemon/i2pd.o libi2pd.a libi2pdclient.a libi2pdlang.a -lssl -lcrypto -lz -lboost_program_options -lpthread -latomic
+g++ -Wall -Wno-unused-parameter -Wextra -pedantic -O0 -g -std=c++17 -D_GLIBCXX_USE_NANOSLEEP=1 -DOPENSSL_SUPPRESS_DEPRECATED -pthread -Wl,--unresolved-symbols=ignore-in-object-files  -I../libi2pd  -o test-keyring-revocation test-keyring-revocation.cpp ../libi2pd.a  -lboost_program_options -lssl -lcrypto -lz  -lpthread
+test-keyring-revocation: all checks passed
