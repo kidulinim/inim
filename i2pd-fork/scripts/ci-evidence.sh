@@ -11,6 +11,9 @@
 #   V3  build.log does NOT contain "No rule to make target"
 #   V4  number of "Applying:" lines equals number of patch files (round 7)
 #   V5  at least one build-log line per patched source .cpp (round 7)
+#   V6  round 8 item 2: INIM_TEST_HOOKS build markers both present --
+#       "OK: MaybeLoadTestKeyRing absent in regular build" and
+#       "OK: MaybeLoadTestKeyRing present in INIM_TEST_HOOKS build"
 # If any check fails the record is written as overall: invalid regardless of
 # what the actions runner reports. Default status is "unconfirmed", not
 # "success". This is called *even on red runs* (if: always()).
@@ -96,12 +99,27 @@ else
     echo "V5 compile lines present for all patched sources -- ok"
   fi
 
-  if [ "$v1" = "FAIL" ] || [ "$v2" = "FAIL" ] || [ "$v3" = "FAIL" ] || [ "$v4" = "FAIL" ] || [ "$v5" = "FAIL" ]; then
+  # V6 (round 8 item 2): INIM_TEST_HOOKS code compiled BOTH ways -- hook
+  # symbol absent in the regular build and present in the hook build.
+  v6=ok
+  if ! grep -q 'OK: MaybeLoadTestKeyRing absent in regular build' "$LOG_FILE"; then
+    v6=FAIL
+    echo "V6 regular-build 'hook absent' marker missing -- FAIL" >&2
+  fi
+  if ! grep -q 'OK: MaybeLoadTestKeyRing present in INIM_TEST_HOOKS build' "$LOG_FILE"; then
+    v6=FAIL
+    echo "V6 INIM_TEST_HOOKS 'hook present' marker missing -- FAIL" >&2
+  fi
+  if [ "$v6" = ok ]; then
+    echo "V6 INIM_TEST_HOOKS build markers both present -- ok"
+  fi
+
+  if [ "$v1" = "FAIL" ] || [ "$v2" = "FAIL" ] || [ "$v3" = "FAIL" ] || [ "$v4" = "FAIL" ] || [ "$v5" = "FAIL" ] || [ "$v6" = "FAIL" ]; then
     overall="invalid"
-    evidence_notes="$evidence_notes V1=$v1 V2=$v2 V3=$v3 V4=$v4 V5=$v5"
+    evidence_notes="$evidence_notes V1=$v1 V2=$v2 V3=$v3 V4=$v4 V5=$v5 V6=$v6"
     echo "evidence validation FAILED -- record marked invalid (job status was: $JOB_OVERALL)" >&2
   else
-    evidence_notes="$evidence_notes V1=ok V2=ok V3=ok V4=ok V5=ok"
+    evidence_notes="$evidence_notes V1=ok V2=ok V3=ok V4=ok V5=ok V6=ok"
     echo "evidence validation PASS"
   fi
 fi

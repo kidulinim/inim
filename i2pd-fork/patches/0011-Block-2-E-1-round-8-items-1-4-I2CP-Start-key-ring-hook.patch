@@ -1,0 +1,235 @@
+From 6c2f5c39d2486c41093677f473e061d7768ebbef Mon Sep 17 00:00:00 2001
+From: INIM Fork <inim-dev@local>
+Date: Wed, 25 Nov 2026 23:03:20 +0000
+Subject: [PATCH] Block 2 (E-1 review round 8, items 1-4): key-ring preload
+ hardening
+
+1. Hook in I2CPDestination::Start (E-1 client side is an I2CP session):
+   MaybeLoadTestKeyRing now runs for I2CP sessions too, not only
+   ClientDestination. Multiple sessions load keyed entries per blinded
+   ident; loads merge in each destination's own io_context thread.
+2. Parser strictness: ANY broken peer_static_keys_b64 entry invalidates
+   the WHOLE record (was a silent drop; a half-registered record would
+   escape revocation by key-set). Unit test case 2b covers it.
+3. One log line per load: path + registered/rejected counts, no key
+   material; error line if the file cannot be opened (was silent).
+4. ApplyTestKeyRingPreload takes a rejectedOut counter; logging moved to
+   MaybeLoadTestKeyRing so exactly one summary line carries the path.
+
+Build note: code under INIM_TEST_HOOKS now compiles both ways (CI steps
+check the hook symbol is absent in regular builds and present with
+-DINIM_TEST_HOOKS); Log.h include added for the hook build.
+---
+ libi2pd/TestKeyRingPreload.cpp | 41 +++++++++++++++++++++++++---------
+ libi2pd/TestKeyRingPreload.h   | 12 ++++++----
+ libi2pd_client/I2CP.cpp        | 13 +++++++++++
+ libi2pd_client/I2CP.h          |  2 +-
+ tests/test-keyring-preload.cpp | 27 +++++++++++++++++++++-
+ 5 files changed, 79 insertions(+), 16 deletions(-)
+
+diff --git a/libi2pd/TestKeyRingPreload.cpp b/libi2pd/TestKeyRingPreload.cpp
+index de4c053..1b85e15 100644
+--- a/libi2pd/TestKeyRingPreload.cpp
++++ b/libi2pd/TestKeyRingPreload.cpp
+@@ -1,6 +1,7 @@
+ #include "TestKeyRingPreload.h"
+ #include "Destination.h"
+ #include "Config.h"
++#include "Log.h"
+ #include <boost/property_tree/ptree.hpp>
+ #include <boost/property_tree/json_parser.hpp>
+ #include <sstream>
+@@ -36,10 +37,13 @@ namespace client
+ 				for (const auto& pstr: *peers)
+ 				{
+ 					i2p::data::Tag<32> sk;
++					// Review round 8 item 3: one broken peer static key invalidates
++					// the WHOLE entry (a half-registered entry would survive a
++					// revocation by key-set). Never log key material.
+ 					if (Decode32 (pstr.second.get_value<std::string> (), sk))
+ 						entry.peerStaticKeys.push_back (sk);
+-					// Invalid peer static key silently dropped (loading is test-only;
+-					// parsing is strict and never logs key material).
++					else
++						entry.valid = false;
+ 				}
+ 			}
+ 			res.push_back (entry);
+@@ -47,19 +51,20 @@ namespace client
+ 		return res;
+ 	}
+ 
+-	size_t ApplyTestKeyRingPreload (LeaseSetDestination& dest, std::istream& s)
++	size_t ApplyTestKeyRingPreload (LeaseSetDestination& dest, std::istream& s, size_t* rejectedOut)
+ 	{
+ 		auto entries = ParseTestKeyRingPreload (s);
+-		size_t registered = 0;
++		size_t registered = 0, rejected = 0;
+ 		for (auto& e: entries)
+ 		{
+-			if (!e.valid) continue;
++			if (!e.valid) { ++rejected; continue; }
+ 			std::string key64 = e.key.ToBase64 ();
+ 			dest.SetKeyRingKey (e.blindedIdent, key64);
+ 			if (!e.peerStaticKeys.empty ())
+ 				dest.SetKeyRingSessionKeys (e.blindedIdent, e.peerStaticKeys);
+ 			++registered;
+ 		}
++		if (rejectedOut) *rejectedOut = rejected;
+ 		return registered;
+ 	}
+ 
+@@ -68,17 +73,33 @@ namespace client
+ 	{
+ 		std::string path;
+ 		i2p::config::GetOption ("inim.test.keyring", path);
+-		if (path.empty ()) return;
+-		std::ifstream f (path);
+-		if (!f) return;
++		if (path.empty ())
++		{
++			// One line even when disabled: an E-1 log must show the hook ran
++			// (review round 8 item 4).
++			LogPrint (eLogDebug, "TestKeyRingPreload: inim.test.keyring not set, nothing to load");
++			return;
++		}
+ 		// Post to the destination's io_context thread (m_Service): the key ring is
+ 		// not thread-safe and belongs to that thread (ADR-008, review round 5 item 1).
++		// Review round 8 item 1: called from ClientDestination::Start AND from
++		// RunnableI2CPDestination::Start; several sessions may load the same
++		// file concurrently, each loading keyed entries per blinded ident.
+ 		auto& svc = dest->GetService ();
+ 		auto destPtr = dest;
+ 		boost::asio::post (svc, [destPtr, path] () {
+ 			std::ifstream f (path);
+-			if (!f) return;
+-			ApplyTestKeyRingPreload (*destPtr, f);
++			if (!f)
++			{
++				LogPrint (eLogError, "TestKeyRingPreload: cannot open ", path);
++				return;
++			}
++			// Exactly one summary line: path, accepted and rejected counts,
++			// no key material (review round 8 item 4).
++			size_t rejected = 0;
++			auto registered = ApplyTestKeyRingPreload (*destPtr, f, &rejected);
++			LogPrint (eLogInfo, "TestKeyRingPreload: ", path, ": ", registered,
++				" entry(ies) registered, ", rejected, " rejected");
+ 		});
+ 	}
+ #endif
+diff --git a/libi2pd/TestKeyRingPreload.h b/libi2pd/TestKeyRingPreload.h
+index 1e17220..5e9169c 100644
+--- a/libi2pd/TestKeyRingPreload.h
++++ b/libi2pd/TestKeyRingPreload.h
+@@ -12,9 +12,13 @@
+ //       "peer_static_keys_b64": ["<32B base64>", ...] }
+ //   ]
+ //
+-// Parsing is strict: base64 broken or wrong key length -> entry is dropped
+-// (key not registered), no key material is logged -- identical semantics to
+-// SetKeyRingKey's decode-failure path (review round 4 item 1).
++// Parsing is strict (review round 8 item 3): base64 broken or wrong key
++// length in ANY of blinded_ident_b64 / key_b64 / peer_static_keys_b64 ->
++// the WHOLE entry is invalid (valid=false) and never registered anywhere.
++// One bad peer static key must not silently lose the revoke link while the
++// key itself stays registered: revocation by key-set would then skip it.
++// No key material is logged -- identical semantics to SetKeyRingKey's
++// decode-failure path (review round 4 item 1).
+ #include <string>
+ #include <vector>
+ #include <istream>
+@@ -43,7 +47,7 @@ namespace client
+ 	// Apply a preload stream to a destination (must already run in the
+ 	// destination's io_context thread -- it mutates key-ring state). Invalid
+ 	// entries are skipped. Returns the number of entries registered.
+-	size_t ApplyTestKeyRingPreload (LeaseSetDestination& dest, std::istream& s);
++	size_t ApplyTestKeyRingPreload (LeaseSetDestination& dest, std::istream& s, size_t* rejectedOut = nullptr);
+ 
+ #ifdef INIM_TEST_HOOKS
+ 	// Startup hook: read the `inim.test.keyring=<path>` option, if present, and
+diff --git a/libi2pd_client/I2CP.cpp b/libi2pd_client/I2CP.cpp
+index 257861e..6f5fd0a 100644
+--- a/libi2pd_client/I2CP.cpp
++++ b/libi2pd_client/I2CP.cpp
+@@ -17,6 +17,7 @@
+ #include "Transports.h"
+ #include "Signature.h"
+ #include "Config.h"
++#include "TestKeyRingPreload.h"
+ #include "I2CP.h"
+ 
+ namespace i2p
+@@ -33,6 +34,18 @@ namespace client
+ 	{
+ 	}
+ 
++	void I2CPDestination::Start () // INIM E-1 review round 8 item 1
++	{
++		LeaseSetDestination::Start ();
++#ifdef INIM_TEST_HOOKS
++		// Test-only key-ring preload hook for E-1: the client side of E-1 is an
++		// I2CP session (I2CPDestination), so the hook must run here too, not
++		// only in ClientDestination::Start. Multiple sessions may each call
++		// this; the loader posts per-destination work keyed by blinded ident,
++		// so concurrent loads merge safely in each destination's own thread.
++		MaybeLoadTestKeyRing (GetSharedFromThis ());
++#endif
++	}
+ 	void I2CPDestination::Stop ()
+ 	{
+ 		m_LeaseSetCreationTimer.cancel ();
+diff --git a/libi2pd_client/I2CP.h b/libi2pd_client/I2CP.h
+index f12fa1b..67992dd 100644
+--- a/libi2pd_client/I2CP.h
++++ b/libi2pd_client/I2CP.h
+@@ -90,7 +90,7 @@ namespace client
+ 				std::shared_ptr<const i2p::data::IdentityEx> identity, bool isPublic, bool isSameThread,
+ 			    const i2p::util::Mapping& params);
+ 			~I2CPDestination () {};
+-
++			void Start () override; // INIM E-1 review round 8 item 1: own Start so the test key-ring preload hook runs for I2CP sessions
+ 			void Stop () override;
+ 
+ 			void SetEncryptionPrivateKey (i2p::data::CryptoKeyType keyType, const uint8_t * key);
+diff --git a/tests/test-keyring-preload.cpp b/tests/test-keyring-preload.cpp
+index 0760b58..f84379f 100644
+--- a/tests/test-keyring-preload.cpp
++++ b/tests/test-keyring-preload.cpp
+@@ -67,7 +67,32 @@ int main ()
+ 		assert (badEntries.size () == 1);
+ 		assert (!badEntries[0].valid);
+ 	}
+-	// 3) wrong key length -> entry invalid
++	// 2b) broken peer static key -> WHOLE entry invalid (round 8 item 3): a
++	// half-registered entry would evade revocation by key-set, so the key must
++	// not be registered either. Uses a fresh ident (b64_32(140)) not touched by
++	// case 1 so the ring lookups below are decisive. Applies must skip it and
++	// report it via rejectedOut.
++	{
++		std::string ident64b = b64_32 (140);
++		std::string key64b = b64_32 (173);
++		std::stringstream badPeer;
++		badPeer << "[ { \"blinded_ident_b64\": \"" << ident64b << "\", "
++			<< "\"key_b64\": \"" << key64b << "\", "
++			<< "\"peer_static_keys_b64\": [ \"!!!broken-peer!!!\", \"" << peer64 << "\" ] } ]";
++		auto badPeerEntries = i2p::client::ParseTestKeyRingPreload (badPeer);
++		assert (badPeerEntries.size () == 1);
++		assert (!badPeerEntries[0].valid); // whole entry invalid, not just the key dropped
++		// apply: entry must be rejected and the key must NOT reach the ring
++		i2p::data::IdentHash ih;
++		assert (ih.FromBase64 (ident64b) == 32);
++		size_t rejected = 0;
++		std::stringstream badPeer2;
++		badPeer2 << badPeer.str (); // restore consumed stream
++		assert (i2p::client::ApplyTestKeyRingPreload (*dest, badPeer2, &rejected) == 0);
++		assert (rejected == 1);
++		i2p::data::Tag<32> probe;
++		assert (!dest->GetKeyRingKey (ih, probe)); // key must NOT be registered
++	}
+ 	{
+ 		std::stringstream shortk;
+ 		shortk << "[ { \"blinded_ident_b64\": \"" << ident64 << "\", "
+-- 
+2.43.0
+

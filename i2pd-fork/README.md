@@ -71,3 +71,20 @@ make -j$(nproc)
 
 Targets are unchanged from upstream (`i2pd`, client/lang libs); on Android the patch
 series additionally builds a JNI library (F-10, later).
+
+## Test-only key-ring preload (E-1): `inim.test.keyring=<path>`
+
+**⚠ The preload file contains private keys (client-auth secrets). Never use it
+outside the E-1 test network. Test artifacts only.**
+
+The preload JSON is read at destination start (`MaybeLoadTestKeyRing`, compiled only
+with `-DINIM_TEST_HOOKS`). Parsing is strict: any broken base64 or wrong-length key
+entry in `blinded_ident_b64`, `key_b64` or `peer_static_keys_b64` invalidates the
+**whole record** — it is rejected as a unit, never partially registered (a
+half-registered record would escape revocation by key-set). One summary line is
+logged per load: path, registered and rejected counts, no key material.
+
+Known limitation (accepted for test code, review round 8 item 5): the decoded
+`key64` copy and the parsed property tree are **not zeroized in memory** after
+loading. This is tolerable for the E-1 harness but would not be acceptable for
+production key handling.

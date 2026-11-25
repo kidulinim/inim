@@ -108,6 +108,35 @@ jobs:
           ./test-keyring-revocation | tee -a ../../build.log
           ./test-keyring-preload | tee -a ../../build.log
 
+      - name: Hook symbol absent in regular build (V6a)
+        id: hookabsent
+        run: |
+          set -o pipefail
+          cd i2pd-src
+          { echo "=== INIM_TEST_HOOKS: regular-build symbol check ==="; } | tee -a ../build.log
+          if nm -C ./i2pd | grep -q MaybeLoadTestKeyRing; then
+            echo "FAIL: MaybeLoadTestKeyRing present in regular build" | tee -a ../build.log
+            exit 1
+          fi
+          echo "OK: MaybeLoadTestKeyRing absent in regular build" | tee -a ../build.log
+
+      - name: Build with -DINIM_TEST_HOOKS, rerun tests (V6b)
+        id: hookbuild
+        run: |
+          set -o pipefail
+          cd i2pd-src
+          make clean >/dev/null 2>&1
+          make -j"$(nproc)" NEEDED_CXXFLAGS="-DINIM_TEST_HOOKS" 2>&1 | tee -a ../build.log
+          test -x ./i2pd
+          nm -C ./i2pd | grep MaybeLoadTestKeyRing | tee -a ../build.log
+          nm -C ./i2pd | grep -q MaybeLoadTestKeyRing || { echo "FAIL: hook symbol missing in INIM_TEST_HOOKS build" | tee -a ../build.log; exit 1; }
+          echo "OK: MaybeLoadTestKeyRing present in INIM_TEST_HOOKS build" | tee -a ../build.log
+          cd tests
+          make clean >/dev/null 2>&1
+          make test-keyring-revocation test-keyring-preload NEEDED_CXXFLAGS="-DINIM_TEST_HOOKS" 2>&1 | tee -a ../../build.log
+          ./test-keyring-revocation | tee -a ../../build.log
+          ./test-keyring-preload | tee -a ../../build.log
+
       - name: Upload build log (compiler, stderr, patch ids, tests)
         if: always()
         uses: actions/upload-artifact@v4
