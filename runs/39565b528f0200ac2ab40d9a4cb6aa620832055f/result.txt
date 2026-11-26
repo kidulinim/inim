@@ -1,0 +1,13 @@
+workflow: build-i2pd-fork
+run: https://github.com/kidulinim/inim/actions/runs/45736693728
+commit: 39565b528f0200ac2ab40d9a4cb6aa620832055f
+date_utc: 2026-11-26T01:40:23Z
+steps:
+  checkout: success
+  install_deps: success
+  fetch_upstream: success
+  apply_patches: success
+  build: success
+  unit_tests: success
+evidence_validation: V1=ok V2=ok V3=ok V4=ok V5=ok V6=ok
+overall: success
