@@ -31,31 +31,31 @@ Applying: Round 5 (Reviewer 1): restore upstream RemoveECIESx25519Session + new 
 Applying: Block 2 (E-1 key-ring preload): inim.test.keyring=<path> JSON loader (SetKeyRingKey/SetKeyRingSessionKeys, strict base64+length, INIM_TEST_HOOKS only); unit test test-keyring-preload (valid/broken-base64/wrong-length)
 == git am 0011-Block-2-E-1-round-8-items-1-4-I2CP-Start-key-ring-hook.patch
 Applying: Block 2 (E-1 review round 8, items 1-4): key-ring preload hardening
-OK: 11 patch(es) applied on c5ab2655 Block 2 (E-1 review round 8, items 1-4): key-ring preload hardening
+OK: 11 patch(es) applied on cf2d96b0 Block 2 (E-1 review round 8, items 1-4): key-ring preload hardening
 === applied patch ids (635b013a612ff47278ef02acf8580a28e10e26c5..HEAD) ===
-c5ab2655 Block 2 (E-1 review round 8, items 1-4): key-ring preload hardening
-1f7e617b Block 2 (E-1 key-ring preload): inim.test.keyring=<path> JSON loader (SetKeyRingKey/SetKeyRingSessionKeys, strict base64+length, INIM_TEST_HOOKS only); unit test test-keyring-preload (valid/broken-base64/wrong-length)
-63fa7e61 Round 5 (Reviewer 1): restore upstream RemoveECIESx25519Session + new RevokeECIESx25519Session (tag-map scan only on revoke); thread-safety rule comment (Destination.h) + ADR-008; RemoveKeyRingKey uses Revoke per-key; test hook InsertRemoteLeaseSetForTest + cache-eviction tests; brace indentation in cache-write block; matrix cases 5/7 documented as left to E-1
-9bf14928 Tests: key-ring revocation unit test (SetKeyRingKey round trip + tag eviction on RemoveKeyRingKey, round 4 items 1/6); fix tests/Makefile for header-only Boost.System
-d0b1b49b Garlic round 4: RemoveECIESx25519Session now drops the terminated sessions session tags from m_ECIESx25519Tags (Terminate() alone only sets a flag; tag sets stayed usable until periodic expire cleanup)
-495ceaa2 I2CP round 4: refuse session creation on i2cp.leaseSetPrivKey (rejected at parse time per ADR-019, not just a log line); fix indentation in F-11 blinded branch (one level too little)
-53c8f653 F-1 key ring round 4: restore SetKeyRingKey definition (scrub base64 copy incl. decode failure); write m_KeyRingCacheKeys under m_KeyRingMutex (data race fix, locking order documented)
-3a5b8262 F-1/F-11 v0.10 (Reviewer 1 round 3, items 1-5): reject i2cp.leaseSetPrivKey (no legacy mode); require per-client auth (DH) on remote LS2; F-11 immediate nullptr reply + session-destination only; RemoveKeyRingKey evicts LeaseSet cache (ident+store hash) and terminates peer sessions
-810ebe96 F-1 v3: no silent shared-key fallback per ADR-019 (fail closed in per-contact mode); scrub base64 also on decode failure
-135ee313 F-11: I2CP HostLookup case 1 resolves blinded (b33) addresses via RequestDestinationWithEncryptedLeaseSet + key ring
-52169a04 F-1: key ring by blinded ident (SHA256(stA || A)), safe copies, zeroize stack buffers
+cf2d96b0 Block 2 (E-1 review round 8, items 1-4): key-ring preload hardening
+016ad752 Block 2 (E-1 key-ring preload): inim.test.keyring=<path> JSON loader (SetKeyRingKey/SetKeyRingSessionKeys, strict base64+length, INIM_TEST_HOOKS only); unit test test-keyring-preload (valid/broken-base64/wrong-length)
+2c802f35 Round 5 (Reviewer 1): restore upstream RemoveECIESx25519Session + new RevokeECIESx25519Session (tag-map scan only on revoke); thread-safety rule comment (Destination.h) + ADR-008; RemoveKeyRingKey uses Revoke per-key; test hook InsertRemoteLeaseSetForTest + cache-eviction tests; brace indentation in cache-write block; matrix cases 5/7 documented as left to E-1
+7bb5db10 Tests: key-ring revocation unit test (SetKeyRingKey round trip + tag eviction on RemoveKeyRingKey, round 4 items 1/6); fix tests/Makefile for header-only Boost.System
+4896b925 Garlic round 4: RemoveECIESx25519Session now drops the terminated sessions session tags from m_ECIESx25519Tags (Terminate() alone only sets a flag; tag sets stayed usable until periodic expire cleanup)
+9337a5fd I2CP round 4: refuse session creation on i2cp.leaseSetPrivKey (rejected at parse time per ADR-019, not just a log line); fix indentation in F-11 blinded branch (one level too little)
+799ca0b1 F-1 key ring round 4: restore SetKeyRingKey definition (scrub base64 copy incl. decode failure); write m_KeyRingCacheKeys under m_KeyRingMutex (data race fix, locking order documented)
+a94aa711 F-1/F-11 v0.10 (Reviewer 1 round 3, items 1-5): reject i2cp.leaseSetPrivKey (no legacy mode); require per-client auth (DH) on remote LS2; F-11 immediate nullptr reply + session-destination only; RemoveKeyRingKey evicts LeaseSet cache (ident+store hash) and terminates peer sessions
+a768e2da F-1 v3: no silent shared-key fallback per ADR-019 (fail closed in per-contact mode); scrub base64 also on decode failure
+c42e056c F-11: I2CP HostLookup case 1 resolves blinded (b33) addresses via RequestDestinationWithEncryptedLeaseSet + key ring
+f870f4ec F-1: key ring by blinded ident (SHA256(stA || A)), safe copies, zeroize stack buffers
 === applied patch ids (635b013a..HEAD) ===
-c5ab2655 Block 2 (E-1 review round 8, items 1-4): key-ring preload hardening
-1f7e617b Block 2 (E-1 key-ring preload): inim.test.keyring=<path> JSON loader (SetKeyRingKey/SetKeyRingSessionKeys, strict base64+length, INIM_TEST_HOOKS only); unit test test-keyring-preload (valid/broken-base64/wrong-length)
-63fa7e61 Round 5 (Reviewer 1): restore upstream RemoveECIESx25519Session + new RevokeECIESx25519Session (tag-map scan only on revoke); thread-safety rule comment (Destination.h) + ADR-008; RemoveKeyRingKey uses Revoke per-key; test hook InsertRemoteLeaseSetForTest + cache-eviction tests; brace indentation in cache-write block; matrix cases 5/7 documented as left to E-1
-9bf14928 Tests: key-ring revocation unit test (SetKeyRingKey round trip + tag eviction on RemoveKeyRingKey, round 4 items 1/6); fix tests/Makefile for header-only Boost.System
-d0b1b49b Garlic round 4: RemoveECIESx25519Session now drops the terminated sessions session tags from m_ECIESx25519Tags (Terminate() alone only sets a flag; tag sets stayed usable until periodic expire cleanup)
-495ceaa2 I2CP round 4: refuse session creation on i2cp.leaseSetPrivKey (rejected at parse time per ADR-019, not just a log line); fix indentation in F-11 blinded branch (one level too little)
-53c8f653 F-1 key ring round 4: restore SetKeyRingKey definition (scrub base64 copy incl. decode failure); write m_KeyRingCacheKeys under m_KeyRingMutex (data race fix, locking order documented)
-3a5b8262 F-1/F-11 v0.10 (Reviewer 1 round 3, items 1-5): reject i2cp.leaseSetPrivKey (no legacy mode); require per-client auth (DH) on remote LS2; F-11 immediate nullptr reply + session-destination only; RemoveKeyRingKey evicts LeaseSet cache (ident+store hash) and terminates peer sessions
-810ebe96 F-1 v3: no silent shared-key fallback per ADR-019 (fail closed in per-contact mode); scrub base64 also on decode failure
-135ee313 F-11: I2CP HostLookup case 1 resolves blinded (b33) addresses via RequestDestinationWithEncryptedLeaseSet + key ring
-52169a04 F-1: key ring by blinded ident (SHA256(stA || A)), safe copies, zeroize stack buffers
+cf2d96b0 Block 2 (E-1 review round 8, items 1-4): key-ring preload hardening
+016ad752 Block 2 (E-1 key-ring preload): inim.test.keyring=<path> JSON loader (SetKeyRingKey/SetKeyRingSessionKeys, strict base64+length, INIM_TEST_HOOKS only); unit test test-keyring-preload (valid/broken-base64/wrong-length)
+2c802f35 Round 5 (Reviewer 1): restore upstream RemoveECIESx25519Session + new RevokeECIESx25519Session (tag-map scan only on revoke); thread-safety rule comment (Destination.h) + ADR-008; RemoveKeyRingKey uses Revoke per-key; test hook InsertRemoteLeaseSetForTest + cache-eviction tests; brace indentation in cache-write block; matrix cases 5/7 documented as left to E-1
+7bb5db10 Tests: key-ring revocation unit test (SetKeyRingKey round trip + tag eviction on RemoveKeyRingKey, round 4 items 1/6); fix tests/Makefile for header-only Boost.System
+4896b925 Garlic round 4: RemoveECIESx25519Session now drops the terminated sessions session tags from m_ECIESx25519Tags (Terminate() alone only sets a flag; tag sets stayed usable until periodic expire cleanup)
+9337a5fd I2CP round 4: refuse session creation on i2cp.leaseSetPrivKey (rejected at parse time per ADR-019, not just a log line); fix indentation in F-11 blinded branch (one level too little)
+799ca0b1 F-1 key ring round 4: restore SetKeyRingKey definition (scrub base64 copy incl. decode failure); write m_KeyRingCacheKeys under m_KeyRingMutex (data race fix, locking order documented)
+a94aa711 F-1/F-11 v0.10 (Reviewer 1 round 3, items 1-5): reject i2cp.leaseSetPrivKey (no legacy mode); require per-client auth (DH) on remote LS2; F-11 immediate nullptr reply + session-destination only; RemoveKeyRingKey evicts LeaseSet cache (ident+store hash) and terminates peer sessions
+a768e2da F-1 v3: no silent shared-key fallback per ADR-019 (fail closed in per-contact mode); scrub base64 also on decode failure
+c42e056c F-11: I2CP HostLookup case 1 resolves blinded (b33) addresses via RequestDestinationWithEncryptedLeaseSet + key ring
+f870f4ec F-1: key ring by blinded ident (SHA256(stA || A)), safe copies, zeroize stack buffers
 g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Base.o libi2pd/Base.cpp
 g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Blinding.o libi2pd/Blinding.cpp
 g++ -g -Wall -Wextra -Wno-unused-parameter -pedantic -Wno-psabi -std=c++20 -Wno-bidi-chars -fPIC -MMD -MP  -Ilibi2pd -Ilibi2pd_client -Ii18n -c -o obj/libi2pd/Config.o libi2pd/Config.cpp
