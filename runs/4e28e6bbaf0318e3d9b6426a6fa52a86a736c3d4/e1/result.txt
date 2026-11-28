@@ -1,0 +1,10 @@
+e1_case1: FAIL
+  stand: E1_STAND_READY (floodfills>=2, tunnels>=3, sessions>=1)
+  server: encrypted LeaseSet2 (type 5) published and verified
+  probe: SessionStatus=1 created, minimal LS2 (store type 3, unpublished)
+         answered CreateLeaseSet2 (type 41) to RequestVariableLeaseSet (37)
+  hostlookup: HostReply result=1 (null identity) on all 12 retries — NOT RESOLVED
+  root cause (pending F-11/storeHash investigation): client blinded storeHash
+         lookup gets 'was not found on 7 floodfills'; results recorded as-is
+raw_logs: runs/4e28e6bbaf0318e3d9b6426a6fa52a86a736c3d4/e1/ (cli.log srv.log ff1.log ff2.log stand.txt case1.txt)
+config: runs/4e28e6bbaf0318e3d9b6426a6fa52a86a736c3d4/e1/srv-tunnels.conf (server tunnel; keyring.json withheld — contains private keys)

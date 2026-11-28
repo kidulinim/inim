@@ -1,0 +1,52 @@
+[e1-stand] WDIR=/tmp/e1-stand NETID=77 I2PD=/home/i2pd-src/i2pd
+[e1-stand] phase 1: generate identities (config is never rewritten after this)
+[e1-stand]   launched ff1 (pid 18528)
+[e1-stand]   launched ff2 (pid 18530)
+[e1-stand]   launched srv (pid 18532)
+[e1-stand]   launched cli (pid 18534)
+[e1-stand] identity gen: 4/4 router.info present (10s)
+[e1-stand] identity gen: 4/4 router.info present (20s)
+[e1-stand] identity gen: 4/4 router.info present (30s)
+[e1-stand] phase 2: build reseed.zip from floodfills' router.info
+  added /tmp/e1-stand/ff1/data/router.info
+  added /tmp/e1-stand/ff2/data/router.info
+reseed.zip size: 1022
+[e1-stand] phase 3: relaunch all routers (identical configs) with reseed.zip present
+[e1-stand]   launched ff1 (pid 18886)
+[e1-stand]   launched ff2 (pid 18888)
+[e1-stand]   launched srv (pid 18890)
+[e1-stand]   launched cli (pid 18900)
+[e1-stand] mesh wait: NTCP2 session lines across logs = 0 (10/90s)
+[e1-stand] mesh wait: NTCP2 session lines across logs = 0 (20/90s)
+[e1-stand] mesh wait: NTCP2 session lines across logs = 0 (30/90s)
+[e1-stand] mesh wait: NTCP2 session lines across logs = 0 (40/90s)
+[e1-stand] mesh wait: NTCP2 session lines across logs = 0 (50/90s)
+[e1-stand] mesh wait: NTCP2 session lines across logs = 0 (60/90s)
+[e1-stand] mesh wait: NTCP2 session lines across logs = 0 (70/90s)
+[e1-stand] mesh wait: NTCP2 session lines across logs = 0 (80/90s)
+[e1-stand] mesh wait: NTCP2 session lines across logs = 0 (90/90s)
+[e1-stand] mesh readiness check (fail if not met):
+--- ff1 ---
+11:24:15@134/[1;34mdebug[0m - NTCP2: Next frame sent 125
+11:24:15@134/[1;34mdebug[0m - NTCP2: Sent length 210
+11:24:15@134/[1;34mdebug[0m - NTCP2: Next frame sent 212
+--- ff2 ---
+11:24:15@938/[1;34mdebug[0m - NTCP2: Padding
+11:24:15@938/[1;34mdebug[0m - NTCP2: Sent length 2119
+11:24:15@938/[1;34mdebug[0m - NTCP2: Next frame sent 2121
+--- srv ---
+11:24:15@454/[1;34mdebug[0m - NTCP2: Next frame sent 2177
+11:24:15@454/[1;34mdebug[0m - NTCP2: Sent length 4179
+11:24:15@454/[1;34mdebug[0m - NTCP2: Next frame sent 4181
+--- cli ---
+11:24:15@458/[1;34mdebug[0m - NTCP2: I2NP
+11:24:15@458/[1;34mdebug[0m - NTCP2: Block type 254 of size 20
+11:24:15@458/[1;34mdebug[0m - NTCP2: Padding
+[e1-stand] metrics: floodfills=2 tunnels_built=63 ntcp2_session_lines=56
+[e1-stand] mesh READY: floodfills=2 tunnels=63 sessions=56
+E1_STAND_READY
+[e1-stand] WDIR=/tmp/e1-stand NETID=77 I2PD=/home/i2pd-src/i2pd
+[e1-stand] stopped ff1
+[e1-stand] stopped ff2
+[e1-stand] stopped srv
+[e1-stand] stopped cli

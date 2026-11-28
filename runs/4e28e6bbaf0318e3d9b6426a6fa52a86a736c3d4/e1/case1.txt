@@ -1,0 +1,31 @@
+E-1 case 1: host=127.0.0.1 port=7654 b33=rzc4c7uh7ykyknignlv5e5gjbvnmzq4ffupfmzrxz7lj224gglsnqj4x.b32.i2p budget=60s
+  <- SetDate type=33 len=15
+  <- SessionStatus type=20 status=1 (/ 1) sessionID=50603
+  built minimal LS2 payload len=469 (store type 3, unpublished)
+  -> HostLookup #1 (reqId=1795865060)
+  <- HostReply result=1 ident_len=0
+  -> HostLookup #2 (reqId=1795865066)
+  <- HostReply result=1 ident_len=0
+  -> HostLookup #3 (reqId=1795865072)
+  <- HostReply result=1 ident_len=0
+  -> HostLookup #4 (reqId=1795865078)
+  -> CreateLeaseSet2 (type 41) len=471 in reply to RequestVariableLeaseSet
+  <- HostReply result=1 ident_len=0
+  -> HostLookup #5 (reqId=1795865084)
+  <- HostReply result=1 ident_len=0
+  -> HostLookup #6 (reqId=1795865090)
+  <- HostReply result=1 ident_len=0
+  -> HostLookup #7 (reqId=1795865096)
+  -> CreateLeaseSet2 (type 41) len=471 in reply to RequestVariableLeaseSet
+  <- HostReply result=1 ident_len=0
+  -> HostLookup #8 (reqId=1795865102)
+  <- HostReply result=1 ident_len=0
+  -> HostLookup #9 (reqId=1795865108)
+  <- HostReply result=1 ident_len=0
+  -> HostLookup #10 (reqId=1795865114)
+  <- HostReply result=1 ident_len=0
+  -> HostLookup #11 (reqId=1795865120)
+  <- HostReply result=1 ident_len=0
+  -> HostLookup #12 (reqId=1795865126)
+  <- HostReply result=1 ident_len=0
+  FAIL: no successful HostReply within budget

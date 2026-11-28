@@ -14,3 +14,4 @@ build/test claim for a commit: read `runs/<sha>/` in this branch.
 | 9e234723ffcc5c2674e706a7e926fbfce2a71163 | 2026-11-24T08:56:43Z | invalid | skipped |  V1=FAIL V2=FAIL V3=ok | https://github.com/kidulinim/inim/actions/runs/45360391539 |
 | 965bf5910d48162f750557a691c43348fd8a302a | 2026-11-24T00:58:05Z | success (REVOKED round 7 -- false: patches not applied) | success | https://github.com/kidulinim/inim/actions/runs/45300879619 |
 | 61c41e817149318b8eef269584a8da8194225d60 | 2026-11-24T00:10:31Z | success (REVOKED round 7 -- false: patches not applied) | success | https://github.com/kidulinim/inim/actions/runs/45294540158 |
+| 4e28e6bbaf0318e3d9b6426a6fa52a86a736c3d4 | 2026-11-28T13:25:04Z | e1 | fail | F-4  is on hold until E-1 verified (as-is results) | manual e1-run.sh case1 |
