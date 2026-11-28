@@ -5,6 +5,7 @@ build/test claim for a commit: read `runs/<sha>/` in this branch.
 
 | commit | date_utc | overall | unit_tests | run |
 |---|---|---|---|---|
+| 4e28e6bbaf0318e3d9b6426a6fa52a86a736c3d4 | 2026-11-28T13:35:29Z | success | success |  V1=ok V2=ok V3=ok V4=ok V5=ok V6=ok | https://github.com/kidulinim/inim/actions/runs/46150023174 |
 | 39565b528f0200ac2ab40d9a4cb6aa620832055f | 2026-11-26T01:41:16Z | success | success |  V1=ok V2=ok V3=ok V4=ok V5=ok V6=ok | https://github.com/kidulinim/inim/actions/runs/45736920166 |
 | 39565b528f0200ac2ab40d9a4cb6aa620832055f | 2026-11-26T01:40:23Z | success | success |  V1=ok V2=ok V3=ok V4=ok V5=ok V6=ok | https://github.com/kidulinim/inim/actions/runs/45736693728 |
 | dae372c1ee89d1ebfb57f6b46b31efc463770f1a | 2026-11-24T10:55:34Z | success | success |  V1=ok V2=ok V3=ok V4=ok V5=ok | https://github.com/kidulinim/inim/actions/runs/45378939369 |
