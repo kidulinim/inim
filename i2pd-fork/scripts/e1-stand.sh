@@ -27,8 +27,9 @@ set +e
 
 I2PD="${I2PD:-/home/i2pd-src/i2pd}"
 WDIR="${WDIR:-/tmp/e1-stand}"
+E1MAT="${E1MAT:-/tmp/e1-mat}"
 NETID="${NETID:-77}"
-WAIT="${WAIT:-45}"
+WAIT="${WAIT:-90}"
 
 # name:port:floodfill:i2cp
 ROUTERS="ff1:20111:true:false ff2:20112:true:false srv:20113:false:false cli:20114:false:true"
@@ -39,10 +40,16 @@ export WDIR NETID
 gen_conf() {
   local name="$1" port="$2" floodfill="$3" i2cp="$4"
   mkdir -p "$WDIR/$name/data"
-  touch "$WDIR/$name/tunnels.conf"
+  # tunnel config: use the E-1 server tunnel if prepared (e1-run.sh), else empty
+  if [ "$name" = srv ] && [ -f "$E1MAT/srv-tunnels.conf" ]; then
+    cp "$E1MAT/srv-tunnels.conf" "$WDIR/$name/tunnels.conf"
+    [ -f "$E1MAT/srv.destkeys" ] && cp "$E1MAT/srv.destkeys" "$WDIR/$name/data/srv.destkeys"
+  else
+    touch "$WDIR/$name/tunnels.conf"
+  fi
   cat > "$WDIR/$name/i2pd.conf" <<CONF
 log = stdout
-loglevel = info
+loglevel = debug
 port = $port
 host = 127.0.0.1
 netid = $NETID
@@ -63,11 +70,16 @@ socksproxy.enabled = false
 sam.enabled = false
 bob.enabled = false
 i2cp.enabled = $i2cp
+i2cp.port = 7654
 i2pcontrol.enabled = false
 upnp.enabled = false
 http.enabled = false
 floodfill = $floodfill
 CONF
+  # E-1 test-only key-ring preload for the client (INIM_TEST_HOOKS builds only)
+  if [ "$name" = cli ] && [ -f "$E1MAT/keyring.json" ]; then
+    echo "inim.test.keyring = $E1MAT/keyring.json" >> "$WDIR/$name/i2pd.conf"
+  fi
 }
 
 launch() {
@@ -140,12 +152,29 @@ PY
     echo "[e1-stand] mesh wait: NTCP2 session lines across logs = $sessions (${waited}/${WAIT}s)"
   done
 
-  echo "[e1-stand] adjacency check (transport session mentions per router):"
+  echo "[e1-stand] mesh readiness check (fail if not met):"
   for spec in $ROUTERS; do
     name=${spec%%:*}
     echo "--- $name ---"
-    grep -aiE "transports|ntcp2|connected|peer" "$WDIR/$name.stdout" | tail -5
+    grep -aiE "transports|ntcp2|connected|peer" "$WDIR/$name.stdout" | tail -3
   done
+
+  # Hard validation (reviewer 2 round 8 item 2): the stand is only READY when
+  # the mesh is really established. Check: (a) ≥2 floodfills seen in NetDb,
+  # (b) each router has created ≥1 outbound or inbound tunnel, (c) at least one
+  # NTCP2 session line across the logs. Never print E1_STAND_READY unconditionally.
+  ff_seen=$(grep -ah "routers loaded" "$WDIR"/*.stdout 2>/dev/null | grep -oE '\([0-9]+ floodfils?\)' | grep -oE '[0-9]+' | sort -nr | head -1)
+  ff_seen=${ff_seen:-0}
+  tunnels=$(grep -ahc "tunnel .* has been created" "$WDIR"/*.stdout 2>/dev/null | awk '{s+=$1} END{print s+0}')
+  sessions=$(grep -ah "NTCP2: Incoming session\|NTCP2: Session\|NTCP2: Transport connected\|SessionCreated" "$WDIR"/*.stdout 2>/dev/null | wc -l)
+  echo "[e1-stand] metrics: floodfills=$ff_seen tunnels_built=$tunnels ntcp2_session_lines=$sessions"
+
+  if [ "$ff_seen" -lt 2 ] || [ "$tunnels" -lt 3 ] || [ "$sessions" -lt 1 ]; then
+    echo "[e1-stand] NOT READY: floodfills=$ff_seen (<2) tunnels=$tunnels (<3) sessions=$sessions (<1)"
+    echo "E1_STAND_FAILED"
+    return 2
+  fi
+  echo "[e1-stand] mesh READY: floodfills=$ff_seen tunnels=$tunnels sessions=$sessions"
   echo "E1_STAND_READY"
 }
 
